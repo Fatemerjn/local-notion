@@ -1,0 +1,49 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html,
+  body,
+  #root {
+    @apply h-full w-full m-0 p-0;
+  }
+  body {
+    @apply bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100;
+  }
+  textarea,
+  input {
+    @apply focus:outline-none;
+  }
+}
+
+@layer components {
+  .block-menu-btn {
+    @apply w-7 h-7 flex items-center justify-center rounded-md bg-white dark:bg-slate-800 shadow-sm border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all;
+  }
+}
+
+body {
+  font-feature-settings: "palt" on;
+  -webkit-font-smoothing: antialiased;
+}
+
+.block-menu-btn {
+  @apply opacity-0 group-hover:opacity-100 transition-opacity;
+}
+
+/* استایل اسکرول بار شبیه Notion */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
