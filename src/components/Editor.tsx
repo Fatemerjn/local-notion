@@ -1,5 +1,5 @@
 import { useDocumentStore } from "../store/useDocumentStore";
-import { Block } from "./Block";
+import { RichBlock } from "./RichBlock"; // ← تغییر مهم
 import { translations } from "../i18n/translations";
 import { DndContext, closestCenter } from "@dnd-kit/core";
 import type { DragEndEvent } from "@dnd-kit/core";
@@ -7,7 +7,6 @@ import {
   SortableContext,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
-import { RichBlock } from "./RichBlock";
 
 interface Props {
   lang: "en" | "fa";
@@ -22,6 +21,7 @@ export const Editor = ({ lang }: Props) => {
     createDocument,
     moveBlock,
   } = useDocumentStore();
+
   const activeDoc = documents.find((d) => d.id === activeDocId);
 
   const handleDragEnd = (event: DragEndEvent) => {
@@ -72,26 +72,18 @@ export const Editor = ({ lang }: Props) => {
             strategy={verticalListSortingStrategy}
           >
             <div className="space-y-4">
-              {activeDoc.blocks.map((block, idx) => (
-                // <Block
-                //   key={block.id}
-                //   id={block.id}
-                //   block={block}
-                //   docId={activeDoc.id}
-                //   isFirst={idx === 0}
-                //   isLast={idx === activeDoc.blocks.length - 1}
-                //   lang={lang}
-                // />
-                // داخل map:
-                <RichBlock
-                  key={block.id}
-                  block={block}
-                  docId={activeDoc.id}
-                  isFirst={idx === 0}
-                  isLast={idx === activeDoc.blocks.length - 1}
-                  lang={lang}
-                />
-              ))}
+              {activeDoc.blocks.map(
+                (
+                  block, // idx حذف شد
+                ) => (
+                  <RichBlock
+                    key={block.id}
+                    block={block}
+                    docId={activeDoc.id}
+                    lang={lang}
+                  />
+                ),
+              )}
             </div>
           </SortableContext>
         </DndContext>

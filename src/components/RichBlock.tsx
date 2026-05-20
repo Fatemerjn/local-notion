@@ -8,7 +8,7 @@ import { useDocumentStore } from "../store/useDocumentStore";
 import { GripVertical, Plus, Trash2 } from "lucide-react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 
 interface Props {
   block: any;
@@ -21,12 +21,12 @@ const suggestionItems = [
   { title: "عنوان ۱", command: "h1", icon: "H1" },
   { title: "عنوان ۲", command: "h2", icon: "H2" },
   { title: "عنوان ۳", command: "h3", icon: "H3" },
-  { title: "لیست تودی", command: "todo", icon: "☑️" },
+  { title: "تودی", command: "todo", icon: "☑️" },
   { title: "لیست بولت", command: "bullet", icon: "•" },
   { title: "لیست شماره‌دار", command: "numbered", icon: "1." },
   { title: "نقل قول", command: "quote", icon: "“" },
   { title: "کد", command: "code", icon: "</>" },
-  { title: "خط جداکننده", command: "divider", icon: "—" },
+  { title: "خط جدا", command: "divider", icon: "—" },
 ];
 
 export const RichBlock = ({ block, docId, lang }: Props) => {
@@ -47,50 +47,48 @@ export const RichBlock = ({ block, docId, lang }: Props) => {
             item.title.toLowerCase().includes(query.toLowerCase()),
           );
         },
-        command: ({ editor: tipEditor, props }) => {
-          const { from } = tipEditor.state.selection;
-          tipEditor
-            .chain()
+        command: ({ editor: e, props }) => {
+          const { from } = e.state.selection;
+          e.chain()
             .focus()
             .deleteRange({ from: from - 1, to: from })
             .run();
 
           switch (props.command) {
             case "h1":
-              tipEditor.chain().toggleHeading({ level: 1 }).run();
+              e.chain().toggleHeading({ level: 1 }).run();
               break;
             case "h2":
-              tipEditor.chain().toggleHeading({ level: 2 }).run();
+              e.chain().toggleHeading({ level: 2 }).run();
               break;
             case "h3":
-              tipEditor.chain().toggleHeading({ level: 3 }).run();
+              e.chain().toggleHeading({ level: 3 }).run();
               break;
             case "todo":
-              tipEditor.chain().toggleTaskList().run();
+              e.chain().toggleTaskList().run();
               break;
             case "bullet":
-              tipEditor.chain().toggleBulletList().run();
+              e.chain().toggleBulletList().run();
               break;
             case "numbered":
-              tipEditor.chain().toggleOrderedList().run();
+              e.chain().toggleOrderedList().run();
               break;
             case "quote":
-              tipEditor.chain().toggleBlockquote().run();
+              e.chain().toggleBlockquote().run();
               break;
             case "code":
-              tipEditor.chain().toggleCodeBlock().run();
+              e.chain().toggleCodeBlock().run();
               break;
             case "divider":
-              tipEditor.chain().setHorizontalRule().run();
+              e.chain().setHorizontalRule().run();
               break;
           }
         },
       }),
     ],
     content: block.content || "<p></p>",
-    onUpdate: ({ editor }) => {
-      updateBlock(docId, block.id, { content: editor.getHTML() });
-    },
+    onUpdate: ({ editor }) =>
+      updateBlock(docId, block.id, { content: editor.getHTML() }),
   });
 
   const {
@@ -111,9 +109,8 @@ export const RichBlock = ({ block, docId, lang }: Props) => {
     <div
       ref={setNodeRef}
       style={style}
-      className="group relative flex gap-3 py-1 border-l-2 border-transparent hover:border-blue-500 pl-2"
+      className="group relative flex gap-3 py-2"
     >
-      {/* Drag Handle */}
       <div
         {...attributes}
         {...listeners}
@@ -122,22 +119,20 @@ export const RichBlock = ({ block, docId, lang }: Props) => {
         <GripVertical size={18} />
       </div>
 
-      {/* Tiptap Editor */}
-      <div className="flex-1 min-w-0 prose dark:prose-invert prose-headings:font-bold prose-p:my-0 focus:outline-none">
+      <div className="flex-1 prose dark:prose-invert max-w-none">
         <EditorContent editor={editor} />
       </div>
 
-      {/* Hover Actions */}
-      <div className="opacity-0 group-hover:opacity-100 flex flex-col gap-1 pt-1 pr-2">
+      <div className="opacity-0 group-hover:opacity-100 flex flex-col gap-1">
         <button
           onClick={() => addBlock(docId, block.id)}
-          className="text-slate-400 hover:text-blue-500 p-1 rounded hover:bg-slate-800"
+          className="text-slate-400 hover:text-blue-500"
         >
           <Plus size={18} />
         </button>
         <button
           onClick={() => deleteBlock(docId, block.id)}
-          className="text-slate-400 hover:text-red-500 p-1 rounded hover:bg-slate-800"
+          className="text-slate-400 hover:text-red-500"
         >
           <Trash2 size={18} />
         </button>

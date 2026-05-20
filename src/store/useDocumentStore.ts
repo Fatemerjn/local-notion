@@ -20,7 +20,7 @@ interface DocumentStore {
   setActiveDocId: (id: string | null) => void;
 }
 
-export const useDocumentStore = create<DocumentStore>((set, get) => ({
+export const useDocumentStore = create<DocumentStore>((set) => ({
   documents: (() => {
     const saved = localStorage.getItem("local_notion_docs");
     if (saved) return JSON.parse(saved);
