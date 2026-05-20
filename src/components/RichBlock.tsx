@@ -3,7 +3,6 @@ import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
 import Link from "@tiptap/extension-link";
-import Suggestion from "@tiptap/suggestion";
 import { useDocumentStore } from "../store/useDocumentStore";
 import { GripVertical, Plus, Trash2 } from "lucide-react";
 import { useSortable } from "@dnd-kit/sortable";
@@ -16,81 +15,62 @@ interface Props {
   lang: "en" | "fa";
 }
 
-const suggestionItems = [
-  { title: "متن", command: "text", icon: "✍️" },
-  { title: "عنوان ۱", command: "h1", icon: "H1" },
-  { title: "عنوان ۲", command: "h2", icon: "H2" },
-  { title: "عنوان ۳", command: "h3", icon: "H3" },
-  { title: "تودی", command: "todo", icon: "☑️" },
-  { title: "لیست بولت", command: "bullet", icon: "•" },
-  { title: "لیست شماره‌دار", command: "numbered", icon: "1." },
-  { title: "نقل قول", command: "quote", icon: "“" },
-  { title: "کد", command: "code", icon: "</>" },
-  { title: "خط جدا", command: "divider", icon: "—" },
-];
-
 export const RichBlock = ({ block, docId, lang }: Props) => {
   const { updateBlock, addBlock, deleteBlock } = useDocumentStore();
 
   const editor = useEditor({
     extensions: [
-      StarterKit.configure({ heading: { levels: [1, 2, 3] } }),
+      StarterKit.configure({
+        heading: { levels: [1, 2, 3] },
+      }),
       Placeholder.configure({
         placeholder:
           lang === "fa" ? "بنویسید یا / بزنید..." : "Type / for commands...",
       }),
       Link,
-      Suggestion.configure({
-        char: "/",
-        items: ({ query }: { query: string }) => {
-          return suggestionItems.filter((item) =>
-            item.title.toLowerCase().includes(query.toLowerCase()),
-          );
-        },
-        command: ({ editor: e, props }) => {
-          const { from } = e.state.selection;
-          e.chain()
-            .focus()
-            .deleteRange({ from: from - 1, to: from })
-            .run();
-
-          switch (props.command) {
-            case "h1":
-              e.chain().toggleHeading({ level: 1 }).run();
-              break;
-            case "h2":
-              e.chain().toggleHeading({ level: 2 }).run();
-              break;
-            case "h3":
-              e.chain().toggleHeading({ level: 3 }).run();
-              break;
-            case "todo":
-              e.chain().toggleTaskList().run();
-              break;
-            case "bullet":
-              e.chain().toggleBulletList().run();
-              break;
-            case "numbered":
-              e.chain().toggleOrderedList().run();
-              break;
-            case "quote":
-              e.chain().toggleBlockquote().run();
-              break;
-            case "code":
-              e.chain().toggleCodeBlock().run();
-              break;
-            case "divider":
-              e.chain().setHorizontalRule().run();
-              break;
-          }
-        },
-      }),
     ],
     content: block.content || "<p></p>",
-    onUpdate: ({ editor }) =>
-      updateBlock(docId, block.id, { content: editor.getHTML() }),
+    onUpdate: ({ editor }) => {
+      updateBlock(docId, block.id, { content: editor.getHTML() });
+    },
+    editorProps: {
+      attributes: {
+        class:
+          "focus:outline-none min-h-[1.5em] prose dark:prose-invert max-w-none",
+      },
+      handleKeyDown: (view, event) => {
+        // لیست بولت
+        if (event.key === "-" && event.shiftKey === false) {
+          const { state } = view;
+          const { from } = state.selection;
+          const textBefore = state.doc.textBetween(Math.max(0, from - 5), from);
+
+          if (textBefore.trim() === "" || textBefore.endsWith("\n")) {
+            event.preventDefault();
+            editor?.chain().focus().toggleBulletList().run();
+            return true;
+          }
+        }
+
+        // لیست شماره‌دار
+        if (event.key === "1" && event.shiftKey === false) {
+          const { state } = view;
+          const { from } = state.selection;
+          const textBefore = state.doc.textBetween(Math.max(0, from - 5), from);
+
+          if (textBefore.trim() === "1." || textBefore.endsWith("\n1.")) {
+            event.preventDefault();
+            editor?.chain().focus().toggleOrderedList().run();
+            return true;
+          }
+        }
+
+        return false;
+      },
+    },
   });
 
+  // Drag & Drop
   const {
     attributes,
     listeners,
@@ -99,6 +79,7 @@ export const RichBlock = ({ block, docId, lang }: Props) => {
     transition,
     isDragging,
   } = useSortable({ id: block.id });
+
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
@@ -109,30 +90,33 @@ export const RichBlock = ({ block, docId, lang }: Props) => {
     <div
       ref={setNodeRef}
       style={style}
-      className="group relative flex gap-3 py-2"
+      className="group relative flex gap-3 py-3 border-l-2 border-transparent hover:border-blue-500 pl-3"
     >
+      {/* Drag Handle */}
       <div
         {...attributes}
         {...listeners}
-        className="opacity-0 group-hover:opacity-100 cursor-grab pt-2 text-slate-400"
+        className="opacity-0 group-hover:opacity-100 cursor-grab pt-2 text-slate-400 hover:text-slate-600"
       >
         <GripVertical size={18} />
       </div>
 
-      <div className="flex-1 prose dark:prose-invert max-w-none">
+      {/* Editor */}
+      <div className="flex-1">
         <EditorContent editor={editor} />
       </div>
 
-      <div className="opacity-0 group-hover:opacity-100 flex flex-col gap-1">
+      {/* Actions */}
+      <div className="opacity-0 group-hover:opacity-100 flex flex-col gap-1 pt-2">
         <button
           onClick={() => addBlock(docId, block.id)}
-          className="text-slate-400 hover:text-blue-500"
+          className="text-slate-400 hover:text-blue-500 p-1 rounded hover:bg-slate-800"
         >
           <Plus size={18} />
         </button>
         <button
           onClick={() => deleteBlock(docId, block.id)}
-          className="text-slate-400 hover:text-red-500"
+          className="text-slate-400 hover:text-red-500 p-1 rounded hover:bg-slate-800"
         >
           <Trash2 size={18} />
         </button>
