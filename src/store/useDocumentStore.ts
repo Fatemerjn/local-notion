@@ -1,9 +1,27 @@
-import { useState, useEffect } from "react";
+// src/store/useDocumentStore.ts
+import { create } from "zustand";
 import type { Document, Block } from "../types";
 import { createBlock } from "../utils/blockUtils";
 
-export const useDocumentStore = () => {
-  const [documents, setDocuments] = useState<Document[]>(() => {
+interface DocumentStore {
+  documents: Document[];
+  activeDocId: string | null;
+  createDocument: (title?: string) => void;
+  updateDocumentTitle: (id: string, title: string) => void;
+  updateBlock: (
+    docId: string,
+    blockId: string,
+    updates: Partial<Block>,
+  ) => void;
+  addBlock: (docId: string, afterBlockId: string, type?: Block["type"]) => void;
+  deleteBlock: (docId: string, blockId: string) => void;
+  deleteDocument: (id: string) => void;
+  moveBlock: (docId: string, fromIndex: number, toIndex: number) => void;
+  setActiveDocId: (id: string | null) => void;
+}
+
+export const useDocumentStore = create<DocumentStore>((set, get) => ({
+  documents: (() => {
     const saved = localStorage.getItem("local_notion_docs");
     if (saved) return JSON.parse(saved);
     return [
@@ -15,24 +33,21 @@ export const useDocumentStore = () => {
         updatedAt: Date.now(),
       },
     ];
-  });
+  })(),
 
-  const [activeDocId, setActiveDocId] = useState<string | null>(() => {
+  activeDocId: (() => {
     const savedId = localStorage.getItem("activeDocId");
-    if (savedId && documents.some((d) => d.id === savedId)) return savedId;
-    return documents[0]?.id || null;
-  });
+    const docs = JSON.parse(localStorage.getItem("local_notion_docs") || "[]");
+    if (savedId && docs.some((d: Document) => d.id === savedId)) return savedId;
+    return docs[0]?.id || null;
+  })(),
 
-  // Auto-save
-  useEffect(() => {
-    localStorage.setItem("local_notion_docs", JSON.stringify(documents));
-  }, [documents]);
+  setActiveDocId: (id) => {
+    set({ activeDocId: id });
+    if (id) localStorage.setItem("activeDocId", id);
+  },
 
-  useEffect(() => {
-    if (activeDocId) localStorage.setItem("activeDocId", activeDocId);
-  }, [activeDocId]);
-
-  const createDocument = (title = "Untitled") => {
+  createDocument: (title = "Untitled") => {
     const newDoc: Document = {
       id: crypto.randomUUID(),
       title,
@@ -40,25 +55,23 @@ export const useDocumentStore = () => {
       createdAt: Date.now(),
       updatedAt: Date.now(),
     };
-    setDocuments((prev) => [newDoc, ...prev]);
-    setActiveDocId(newDoc.id);
-  };
+    set((state) => ({
+      documents: [newDoc, ...state.documents],
+      activeDocId: newDoc.id,
+    }));
+  },
 
-  const updateDocumentTitle = (id: string, title: string) => {
-    setDocuments((prev) =>
-      prev.map((doc) =>
+  updateDocumentTitle: (id, title) => {
+    set((state) => ({
+      documents: state.documents.map((doc) =>
         doc.id === id ? { ...doc, title, updatedAt: Date.now() } : doc,
       ),
-    );
-  };
+    }));
+  },
 
-  const updateBlock = (
-    docId: string,
-    blockId: string,
-    updates: Partial<Block>,
-  ) => {
-    setDocuments((prev) =>
-      prev.map((doc) =>
+  updateBlock: (docId, blockId, updates) => {
+    set((state) => ({
+      documents: state.documents.map((doc) =>
         doc.id === docId
           ? {
               ...doc,
@@ -69,16 +82,12 @@ export const useDocumentStore = () => {
             }
           : doc,
       ),
-    );
-  };
+    }));
+  },
 
-  const addBlock = (
-    docId: string,
-    afterBlockId: string,
-    type: Block["type"] = "text",
-  ) => {
-    setDocuments((prev) =>
-      prev.map((doc) => {
+  addBlock: (docId, afterBlockId, type = "text") => {
+    set((state) => ({
+      documents: state.documents.map((doc) => {
         if (doc.id !== docId) return doc;
         const index = doc.blocks.findIndex((b) => b.id === afterBlockId);
         const newBlock = createBlock(type);
@@ -86,12 +95,12 @@ export const useDocumentStore = () => {
         newBlocks.splice(index + 1, 0, newBlock);
         return { ...doc, blocks: newBlocks, updatedAt: Date.now() };
       }),
-    );
-  };
+    }));
+  },
 
-  const deleteBlock = (docId: string, blockId: string) => {
-    setDocuments((prev) =>
-      prev.map((doc) =>
+  deleteBlock: (docId, blockId) => {
+    set((state) => ({
+      documents: state.documents.map((doc) =>
         doc.id === docId
           ? {
               ...doc,
@@ -100,41 +109,34 @@ export const useDocumentStore = () => {
             }
           : doc,
       ),
-    );
-  };
+    }));
+  },
 
-  const deleteDocument = (id: string) => {
-    setDocuments((prev) => {
-      const newDocs = prev.filter((d) => d.id !== id);
-      if (activeDocId === id && newDocs.length > 0)
-        setActiveDocId(newDocs[0].id);
-      else if (newDocs.length === 0) setActiveDocId(null);
-      return newDocs;
+  deleteDocument: (id) => {
+    set((state) => {
+      const newDocs = state.documents.filter((d) => d.id !== id);
+      let newActive = state.activeDocId;
+      if (state.activeDocId === id) {
+        newActive = newDocs.length > 0 ? newDocs[0].id : null;
+      }
+      return { documents: newDocs, activeDocId: newActive };
     });
-  };
+  },
 
-  const moveBlock = (docId: string, fromIndex: number, toIndex: number) => {
-    setDocuments((prev) =>
-      prev.map((doc) => {
+  moveBlock: (docId, fromIndex, toIndex) => {
+    set((state) => ({
+      documents: state.documents.map((doc) => {
         if (doc.id !== docId) return doc;
         const newBlocks = [...doc.blocks];
         const [moved] = newBlocks.splice(fromIndex, 1);
         newBlocks.splice(toIndex, 0, moved);
         return { ...doc, blocks: newBlocks, updatedAt: Date.now() };
       }),
-    );
-  };
+    }));
+  },
+}));
 
-  return {
-    documents,
-    activeDocId,
-    setActiveDocId,
-    createDocument,
-    updateDocumentTitle,
-    updateBlock,
-    addBlock,
-    deleteBlock,
-    deleteDocument,
-    moveBlock,
-  };
-};
+// Auto-save به localStorage
+useDocumentStore.subscribe((state) => {
+  localStorage.setItem("local_notion_docs", JSON.stringify(state.documents));
+});

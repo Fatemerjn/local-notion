@@ -6,7 +6,7 @@ import { Toaster, toast } from "react-hot-toast";
 
 function App() {
   const [lang, setLang] = useState<"en" | "fa">(() => {
-    return (localStorage.getItem("lang") as "en" | "fa") || "en";
+    return (localStorage.getItem("lang") as "en" | "fa") || "fa"; // پیش‌فرض فارسی
   });
   const [dark, setDark] = useState(
     () => localStorage.getItem("theme") === "dark",
@@ -14,15 +14,18 @@ function App() {
 
   const { createDocument } = useDocumentStore();
 
-  // میانبرهای صفحه کلید
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === "n") {
         e.preventDefault();
         createDocument();
-        toast.success("New page created");
+        toast.success("صفحه جدید ساخته شد");
       }
-      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === "D") {
+      if (
+        (e.ctrlKey || e.metaKey) &&
+        e.shiftKey &&
+        e.key.toLowerCase() === "d"
+      ) {
         e.preventDefault();
         setDark((prev) => !prev);
       }
@@ -30,14 +33,6 @@ function App() {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [createDocument]);
-
-  // ذخیره خودکار با نوتیفیکیشن
-  useEffect(() => {
-    const interval = setInterval(() => {
-      toast.success("Auto-saved", { icon: "💾", duration: 1500 });
-    }, 30000);
-    return () => clearInterval(interval);
-  }, []);
 
   useEffect(() => {
     localStorage.setItem("lang", lang);
@@ -48,7 +43,7 @@ function App() {
 
   return (
     <div
-      className={`flex h-screen w-full ${lang === "fa" ? "font-vazir" : "font-sans"}`}
+      className={`flex h-screen w-full overflow-hidden ${lang === "fa" ? "font-vazir" : "font-sans"}`}
     >
       <Toaster position="bottom-right" />
       <Sidebar
@@ -58,7 +53,7 @@ function App() {
       <Editor lang={lang} />
       <button
         onClick={() => setDark(!dark)}
-        className="fixed bottom-5 right-5 bg-slate-200 dark:bg-slate-800 p-2 rounded-full shadow-lg z-50"
+        className="fixed bottom-5 right-5 bg-slate-200 dark:bg-slate-800 p-3 rounded-full shadow-lg z-50 text-xl"
       >
         {dark ? "☀️" : "🌙"}
       </button>
