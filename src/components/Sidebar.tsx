@@ -1,6 +1,9 @@
 import { useDocumentStore } from "../store/useDocumentStore";
 import { translations } from "../i18n/translations";
 import { useState } from "react";
+import { Plus, Search, FileText, Trash2, Languages } from "lucide-react";
+import { formatDistanceToNow } from "date-fns";
+import { faIR, enUS } from "date-fns/locale";
 
 interface Props {
   lang: "en" | "fa";
@@ -33,19 +36,21 @@ export const Sidebar = ({ lang, onLangToggle }: Props) => {
             onClick={onLangToggle}
             className="p-1.5 rounded-md hover:bg-slate-200 dark:hover:bg-slate-800 transition"
           >
-            🌐
+            <Languages size={18} />
           </button>
         </div>
         <button
           onClick={() => createDocument(t.untitled)}
           className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg transition"
         >
-          ➕ {t.newDocButton}
+          <Plus size={16} />
+          {t.newDocButton}
         </button>
         <div className="relative mt-3">
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
-            🔍
-          </span>
+          <Search
+            size={14}
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+          />
           <input
             type="text"
             placeholder={t.searchDocs}
@@ -72,10 +77,18 @@ export const Sidebar = ({ lang, onLangToggle }: Props) => {
                   : "hover:bg-slate-100 dark:hover:bg-slate-800"
               }`}
             >
-              <div className="flex items-center gap-2 min-w-0">
-                <span>📄</span>
-                <span className="truncate text-sm font-medium">
-                  {doc.title || t.untitled}
+              <div className="flex flex-col min-w-0">
+                <div className="flex items-center gap-2">
+                  <FileText size={14} className="shrink-0" />
+                  <span className="truncate text-sm font-medium">
+                    {doc.title || t.untitled}
+                  </span>
+                </div>
+                <span className="text-xs text-slate-400 ml-6">
+                  {formatDistanceToNow(doc.updatedAt, {
+                    addSuffix: true,
+                    locale: lang === "fa" ? faIR : enUS,
+                  })}
                 </span>
               </div>
               <button
@@ -85,7 +98,7 @@ export const Sidebar = ({ lang, onLangToggle }: Props) => {
                 }}
                 className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-red-100 dark:hover:bg-red-900/40 text-red-500 transition"
               >
-                🗑️
+                <Trash2 size={14} />
               </button>
             </div>
           ))

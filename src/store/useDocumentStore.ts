@@ -1,14 +1,6 @@
 import { useState, useEffect } from "react";
 import type { Document, Block } from "../types";
-
-const generateId = () => crypto.randomUUID();
-
-const createBlock = (type: Block["type"] = "text", content = ""): Block => ({
-  id: generateId(),
-  type,
-  content,
-  checked: type === "todo" ? false : undefined,
-});
+import { createBlock } from "../utils/blockUtils";
 
 export const useDocumentStore = () => {
   const [documents, setDocuments] = useState<Document[]>(() => {
@@ -16,8 +8,8 @@ export const useDocumentStore = () => {
     if (saved) return JSON.parse(saved);
     return [
       {
-        id: generateId(),
-        title: "Welcome",
+        id: crypto.randomUUID(),
+        title: "Welcome to Local Notion",
         blocks: [createBlock("text", "Start typing...")],
         createdAt: Date.now(),
         updatedAt: Date.now(),
@@ -31,6 +23,7 @@ export const useDocumentStore = () => {
     return documents[0]?.id || null;
   });
 
+  // Auto-save
   useEffect(() => {
     localStorage.setItem("local_notion_docs", JSON.stringify(documents));
   }, [documents]);
@@ -41,7 +34,7 @@ export const useDocumentStore = () => {
 
   const createDocument = (title = "Untitled") => {
     const newDoc: Document = {
-      id: generateId(),
+      id: crypto.randomUUID(),
       title,
       blocks: [createBlock("text", "")],
       createdAt: Date.now(),
@@ -119,6 +112,7 @@ export const useDocumentStore = () => {
       return newDocs;
     });
   };
+
   const moveBlock = (docId: string, fromIndex: number, toIndex: number) => {
     setDocuments((prev) =>
       prev.map((doc) => {

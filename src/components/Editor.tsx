@@ -1,6 +1,12 @@
 import { useDocumentStore } from "../store/useDocumentStore";
 import { Block } from "./Block";
 import { translations } from "../i18n/translations";
+import { DndContext, closestCenter } from "@dnd-kit/core";
+import type { DragEndEvent } from "@dnd-kit/core";
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
 
 interface Props {
   lang: "en" | "fa";
@@ -8,9 +14,27 @@ interface Props {
 
 export const Editor = ({ lang }: Props) => {
   const t = translations[lang];
-  const { documents, activeDocId, updateDocumentTitle, createDocument } =
-    useDocumentStore();
+  const {
+    documents,
+    activeDocId,
+    updateDocumentTitle,
+    createDocument,
+    moveBlock,
+  } = useDocumentStore();
   const activeDoc = documents.find((d) => d.id === activeDocId);
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (active.id !== over?.id && activeDocId) {
+      const oldIndex =
+        activeDoc?.blocks.findIndex((b) => b.id === active.id) ?? -1;
+      const newIndex =
+        activeDoc?.blocks.findIndex((b) => b.id === over?.id) ?? -1;
+      if (oldIndex !== -1 && newIndex !== -1) {
+        moveBlock(activeDocId, oldIndex, newIndex);
+      }
+    }
+  };
 
   if (!activeDoc) {
     return (
@@ -38,18 +62,29 @@ export const Editor = ({ lang }: Props) => {
           placeholder={t.placeholderTitle}
           className="w-full text-4xl md:text-5xl font-bold bg-transparent border-none outline-none mb-8 placeholder:text-slate-300 dark:placeholder:text-slate-700"
         />
-        <div className="space-y-4">
-          {activeDoc.blocks.map((block, idx) => (
-            <Block
-              key={block.id}
-              block={block}
-              docId={activeDoc.id}
-              isFirst={idx === 0}
-              isLast={idx === activeDoc.blocks.length - 1}
-              lang={lang}
-            />
-          ))}
-        </div>
+        <DndContext
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
+        >
+          <SortableContext
+            items={activeDoc.blocks.map((b) => b.id)}
+            strategy={verticalListSortingStrategy}
+          >
+            <div className="space-y-4">
+              {activeDoc.blocks.map((block, idx) => (
+                <Block
+                  key={block.id}
+                  id={block.id}
+                  block={block}
+                  docId={activeDoc.id}
+                  isFirst={idx === 0}
+                  isLast={idx === activeDoc.blocks.length - 1}
+                  lang={lang}
+                />
+              ))}
+            </div>
+          </SortableContext>
+        </DndContext>
       </div>
     </main>
   );
