@@ -1,4 +1,11 @@
-export type BlockType = "text" | "heading" | "todo";
+export type BlockType =
+  | "text"
+  | "heading"
+  | "todo"
+  | "quote"
+  | "code"
+  | "divider"
+  | "image";
 
 export interface Block {
   id: string;
@@ -34,3 +41,13 @@ export interface Translation {
 }
 
 export type Language = "en" | "fa";
+
+export interface Block {
+  id: string;
+  type: BlockType;
+  content: string; // برای text-based
+  checked?: boolean; // فقط todo
+  level?: number; // برای heading (1,2,3)
+  src?: string; // برای image
+  language?: string; // برای code
+}

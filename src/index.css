@@ -47,3 +47,30 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: #9ca3af;
 }
+/* src/index.css یا globals */
+body {
+  font-family: "Vazirmatn", system-ui, sans-serif;
+}
+
+.prose {
+  max-width: none;
+}
+
+.prose h1 {
+  font-size: 2.2em;
+  margin: 1.2em 0 0.4em;
+}
+.prose h2 {
+  font-size: 1.8em;
+  margin: 1.1em 0 0.3em;
+}
+.prose h3 {
+  font-size: 1.4em;
+}
+
+.slash-menu {
+  background: #1f2937;
+  border: 1px solid #374151;
+  border-radius: 8px;
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.3);
+}

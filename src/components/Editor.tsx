@@ -7,6 +7,7 @@ import {
   SortableContext,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
+import { RichBlock } from "./RichBlock";
 
 interface Props {
   lang: "en" | "fa";
@@ -72,9 +73,18 @@ export const Editor = ({ lang }: Props) => {
           >
             <div className="space-y-4">
               {activeDoc.blocks.map((block, idx) => (
-                <Block
+                // <Block
+                //   key={block.id}
+                //   id={block.id}
+                //   block={block}
+                //   docId={activeDoc.id}
+                //   isFirst={idx === 0}
+                //   isLast={idx === activeDoc.blocks.length - 1}
+                //   lang={lang}
+                // />
+                // داخل map:
+                <RichBlock
                   key={block.id}
-                  id={block.id}
                   block={block}
                   docId={activeDoc.id}
                   isFirst={idx === 0}
