@@ -7,7 +7,6 @@ import { useDocumentStore } from "../store/useDocumentStore";
 import { GripVertical, Plus, Trash2 } from "lucide-react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { useEffect } from "react";
 
 interface Props {
   block: any;
@@ -20,12 +19,12 @@ export const RichBlock = ({ block, docId, lang }: Props) => {
 
   const editor = useEditor({
     extensions: [
-      StarterKit.configure({
-        heading: { levels: [1, 2, 3] },
-      }),
+      StarterKit.configure({ heading: { levels: [1, 2, 3] } }),
       Placeholder.configure({
         placeholder:
-          lang === "fa" ? "بنویسید یا / بزنید..." : "Type / for commands...",
+          lang === "fa"
+            ? "بنویسید یا / بزنید برای دستورات..."
+            : "Type / for commands...",
       }),
       Link,
     ],
@@ -35,42 +34,11 @@ export const RichBlock = ({ block, docId, lang }: Props) => {
     },
     editorProps: {
       attributes: {
-        class:
-          "focus:outline-none min-h-[1.5em] prose dark:prose-invert max-w-none",
-      },
-      handleKeyDown: (view, event) => {
-        // لیست بولت
-        if (event.key === "-" && event.shiftKey === false) {
-          const { state } = view;
-          const { from } = state.selection;
-          const textBefore = state.doc.textBetween(Math.max(0, from - 5), from);
-
-          if (textBefore.trim() === "" || textBefore.endsWith("\n")) {
-            event.preventDefault();
-            editor?.chain().focus().toggleBulletList().run();
-            return true;
-          }
-        }
-
-        // لیست شماره‌دار
-        if (event.key === "1" && event.shiftKey === false) {
-          const { state } = view;
-          const { from } = state.selection;
-          const textBefore = state.doc.textBetween(Math.max(0, from - 5), from);
-
-          if (textBefore.trim() === "1." || textBefore.endsWith("\n1.")) {
-            event.preventDefault();
-            editor?.chain().focus().toggleOrderedList().run();
-            return true;
-          }
-        }
-
-        return false;
+        class: "min-h-[1.5em] outline-none py-1 text-[16px] leading-relaxed",
       },
     },
   });
 
-  // Drag & Drop
   const {
     attributes,
     listeners,
@@ -79,7 +47,6 @@ export const RichBlock = ({ block, docId, lang }: Props) => {
     transition,
     isDragging,
   } = useSortable({ id: block.id });
-
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
@@ -90,35 +57,35 @@ export const RichBlock = ({ block, docId, lang }: Props) => {
     <div
       ref={setNodeRef}
       style={style}
-      className="group relative flex gap-3 py-3 border-l-2 border-transparent hover:border-blue-500 pl-3"
+      className="group relative flex gap-4 py-3 pl-4 border-l-4 border-transparent hover:border-blue-500 rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-all"
     >
       {/* Drag Handle */}
       <div
         {...attributes}
         {...listeners}
-        className="opacity-0 group-hover:opacity-100 cursor-grab pt-2 text-slate-400 hover:text-slate-600"
+        className="opacity-0 group-hover:opacity-100 cursor-grab pt-3 text-slate-400 hover:text-slate-600 flex-shrink-0"
       >
-        <GripVertical size={18} />
+        <GripVertical size={20} />
       </div>
 
-      {/* Editor */}
-      <div className="flex-1">
+      {/* Rich Text Area */}
+      <div className="flex-1 prose dark:prose-invert max-w-none prose-headings:font-bold prose-p:my-1 focus-within:outline-none">
         <EditorContent editor={editor} />
       </div>
 
-      {/* Actions */}
-      <div className="opacity-0 group-hover:opacity-100 flex flex-col gap-1 pt-2">
+      {/* Hover Actions */}
+      <div className="opacity-0 group-hover:opacity-100 flex flex-col gap-1 pt-3">
         <button
           onClick={() => addBlock(docId, block.id)}
-          className="text-slate-400 hover:text-blue-500 p-1 rounded hover:bg-slate-800"
+          className="text-slate-400 hover:text-blue-600 p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded"
         >
-          <Plus size={18} />
+          <Plus size={20} />
         </button>
         <button
           onClick={() => deleteBlock(docId, block.id)}
-          className="text-slate-400 hover:text-red-500 p-1 rounded hover:bg-slate-800"
+          className="text-slate-400 hover:text-red-500 p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded"
         >
-          <Trash2 size={18} />
+          <Trash2 size={20} />
         </button>
       </div>
     </div>
