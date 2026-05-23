@@ -1,93 +1,48 @@
-// src/components/RichBlock.tsx
-import { useEditor, EditorContent } from "@tiptap/react";
-import StarterKit from "@tiptap/starter-kit";
-import Placeholder from "@tiptap/extension-placeholder";
-import Link from "@tiptap/extension-link";
-import { useDocumentStore } from "../store/useDocumentStore";
-import { GripVertical, Plus, Trash2 } from "lucide-react";
-import { useSortable } from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
+import React from "react";
+import { useDocumentStore } from "@/store/useDocumentStore";
+import type { Block, BlockType } from "@/types";
 
-interface Props {
-  block: any;
+interface RichBlockProps {
+  block: Block;
   docId: string;
-  lang: "en" | "fa";
 }
 
-export const RichBlock = ({ block, docId, lang }: Props) => {
+const RichBlock: React.FC<RichBlockProps> = ({ block }) => {
   const { updateBlock, addBlock, deleteBlock } = useDocumentStore();
 
-  const editor = useEditor({
-    extensions: [
-      StarterKit.configure({ heading: { levels: [1, 2, 3] } }),
-      Placeholder.configure({
-        placeholder:
-          lang === "fa"
-            ? "بنویسید یا / بزنید برای دستورات..."
-            : "Type / for commands...",
-      }),
-      Link,
-    ],
-    content: block.content || "<p></p>",
-    onUpdate: ({ editor }) => {
-      updateBlock(docId, block.id, { content: editor.getHTML() });
-    },
-    editorProps: {
-      attributes: {
-        class: "min-h-[1.5em] outline-none py-1 text-[16px] leading-relaxed",
-      },
-    },
-  });
-
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: block.id });
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
+  const handleContentChange = (newContent: string) => {
+    updateBlock(block.id, { content: newContent });
   };
 
   return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      className="group relative flex gap-4 py-3 pl-4 border-l-4 border-transparent hover:border-blue-500 rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-all"
-    >
-      {/* Drag Handle */}
+    <div className="group relative py-1 px-2 hover:bg-zinc-100 rounded-md">
       <div
-        {...attributes}
-        {...listeners}
-        className="opacity-0 group-hover:opacity-100 cursor-grab pt-3 text-slate-400 hover:text-slate-600 flex-shrink-0"
-      >
-        <GripVertical size={20} />
-      </div>
+        contentEditable
+        suppressContentEditableWarning
+        onBlur={(e) => handleContentChange(e.currentTarget.innerText)}
+        className="min-h-[28px] outline-none py-1 px-2 text-[17px]"
+        dangerouslySetInnerHTML={{
+          __html: typeof block.content === "string" ? block.content : "",
+        }}
+      />
 
-      {/* Rich Text Area */}
-      <div className="flex-1 prose dark:prose-invert max-w-none prose-headings:font-bold prose-p:my-1 focus-within:outline-none">
-        <EditorContent editor={editor} />
-      </div>
-
-      {/* Hover Actions */}
-      <div className="opacity-0 group-hover:opacity-100 flex flex-col gap-1 pt-3">
+      {/* دکمه‌های عمل (برای تست) */}
+      <div className="absolute right-4 top-2 opacity-0 group-hover:opacity-100 flex gap-1 text-xs">
         <button
-          onClick={() => addBlock(docId, block.id)}
-          className="text-slate-400 hover:text-blue-600 p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded"
+          onClick={() => addBlock("text")}
+          className="px-3 py-1 bg-white border border-slate-300 rounded hover:bg-slate-50"
         >
-          <Plus size={20} />
+          +
         </button>
         <button
-          onClick={() => deleteBlock(docId, block.id)}
-          className="text-slate-400 hover:text-red-500 p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded"
+          onClick={() => deleteBlock(block.id)}
+          className="px-3 py-1 bg-white border border-red-300 text-red-500 rounded hover:bg-red-50"
         >
-          <Trash2 size={20} />
+          ×
         </button>
       </div>
     </div>
   );
 };
+
+export default RichBlock;

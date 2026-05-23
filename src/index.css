@@ -3,74 +3,17 @@
 @tailwind utilities;
 
 @layer base {
-  html,
-  body,
-  #root {
-    @apply h-full w-full m-0 p-0;
-  }
-  body {
-    @apply bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100;
-  }
-  textarea,
-  input {
-    @apply focus:outline-none;
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
+    --primary: 240 5.9% 10%;
+    --primary-foreground: 0 0% 98%;
+    --border: 240 5.9% 90%;
   }
 }
 
 @layer components {
-  .block-menu-btn {
-    @apply w-7 h-7 flex items-center justify-center rounded-md bg-white dark:bg-slate-800 shadow-sm border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all;
+  .notion-editor {
+    font-family: "Inter", system-ui, sans-serif;
   }
-}
-
-body {
-  font-feature-settings: "palt" on;
-  -webkit-font-smoothing: antialiased;
-}
-
-.block-menu-btn {
-  @apply opacity-0 group-hover:opacity-100 transition-opacity;
-}
-
-/* استایل اسکرول بار شبیه Notion */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-::-webkit-scrollbar-thumb {
-  background: #d1d5db;
-  border-radius: 10px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: #9ca3af;
-}
-/* src/index.css یا globals */
-body {
-  font-family: "Vazirmatn", system-ui, sans-serif;
-}
-
-.prose {
-  max-width: none;
-}
-
-.prose h1 {
-  font-size: 2.2em;
-  margin: 1.2em 0 0.4em;
-}
-.prose h2 {
-  font-size: 1.8em;
-  margin: 1.1em 0 0.3em;
-}
-.prose h3 {
-  font-size: 1.4em;
-}
-
-.slash-menu {
-  background: #1f2937;
-  border: 1px solid #374151;
-  border-radius: 8px;
-  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.3);
 }

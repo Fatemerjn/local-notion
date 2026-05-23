@@ -1,53 +1,52 @@
 export type BlockType =
   | "text"
-  | "heading"
+  | "heading1"
+  | "heading2"
+  | "heading3"
+  | "bulleted-list"
+  | "numbered-list"
   | "todo"
+  | "toggle"
   | "quote"
   | "code"
+  | "image"
   | "divider"
-  | "image";
+  | "page"
+  | "database";
 
 export interface Block {
   id: string;
   type: BlockType;
   content: string;
+  children: string[];
+  parentId: string | null;
+  createdAt: Date;
+  updatedAt: Date;
   checked?: boolean;
 }
 
 export interface Document {
   id: string;
   title: string;
+  icon?: string;
+  cover?: string;
+  blocks: string[];
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface DocumentStore {
+  documents: Document[];
+  activeDocId: string | null;
   blocks: Block[];
-  createdAt: number;
-  updatedAt: number;
-}
 
-export interface Translation {
-  dir: "ltr" | "rtl";
-  font: string;
-  sidebarTitle: string;
-  newDocButton: string;
-  placeholderTitle: string;
-  placeholderContent: string;
-  blockTypeText: string;
-  blockTypeHeading: string;
-  blockTypeTodo: string;
-  switchLang: string;
-  deleteDoc: string;
-  untitled: string;
-  searchDocs: string;
-  noDocs: string;
-  createFirst: string;
-}
+  createDocument: (title?: string) => void;
+  setActiveDocId: (id: string) => void;
+  updateDocumentTitle: (id: string, title: string) => void;
+  deleteDocument: (id: string) => void;
 
-export type Language = "en" | "fa";
-
-export interface Block {
-  id: string;
-  type: BlockType;
-  content: string; // برای text-based
-  checked?: boolean; // فقط todo
-  level?: number; // برای heading (1,2,3)
-  src?: string; // برای image
-  language?: string; // برای code
+  addBlock: (type: BlockType, index?: number) => void;
+  updateBlock: (id: string, updates: Partial<Block>) => void;
+  deleteBlock: (id: string) => void;
+  moveBlock: (fromIndex: number, toIndex: number) => void;
 }

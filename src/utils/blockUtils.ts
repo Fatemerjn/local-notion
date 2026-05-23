@@ -1,19 +1,59 @@
-import type { Block, BlockType } from "../types";
-
-export const createBlock = (type: BlockType = "text", content = ""): Block => ({
-  id: crypto.randomUUID(),
-  type,
-  content,
-  checked: type === "todo" ? false : undefined,
-});
+// src/utils/blockUtils.ts
+import type { Block, BlockType } from "@/types/block";
 
 export const getBlockPlaceholder = (
   type: BlockType,
-  lang: "en" | "fa",
+  lang: "fa" | "en" = "fa",
 ): string => {
-  const placeholders = {
-    en: { text: "Type '/' for commands...", heading: "Heading", todo: "Task" },
-    fa: { text: "برای کامندها '/' را بزنید...", heading: "تیتر", todo: "کار" },
+  const placeholders: Record<string, Record<BlockType, string>> = {
+    fa: {
+      text: "متن بنویسید...",
+      heading1: "عنوان اصلی",
+      heading2: "عنوان فرعی",
+      heading3: "عنوان کوچک",
+      "bulleted-list": "• لیست",
+      "numbered-list": "۱. لیست شماره‌دار",
+      todo: "☐ کار جدید",
+      toggle: "▶ بخش پنهان",
+      quote: "نقل قول بنویسید...",
+      code: "کد بنویسید...",
+      image: "تصویر",
+      divider: "",
+      page: "صفحه جدید",
+      database: "دیتابیس",
+    },
+    en: {
+      text: "Type something...",
+      heading1: "Heading 1",
+      heading2: "Heading 2",
+      heading3: "Heading 3",
+      "bulleted-list": "List",
+      "numbered-list": "Numbered list",
+      todo: "To do",
+      toggle: "Toggle",
+      quote: "Quote",
+      code: "Code",
+      image: "Image",
+      divider: "",
+      page: "New page",
+      database: "Database",
+    },
   };
-  return placeholders[lang][type];
+
+  return placeholders[lang]?.[type] || "متن بنویسید...";
+};
+
+export const createNewBlock = (
+  type: BlockType = "text",
+  content = "",
+): Block => {
+  return {
+    id: crypto.randomUUID(),
+    type,
+    content: content || getBlockPlaceholder(type),
+    children: [],
+    parentId: null,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  };
 };

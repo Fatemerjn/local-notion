@@ -1,38 +1,16 @@
-import type { Translation, Language } from "../types";
+export type Language = "fa" | "en";
 
-export const translations: Record<Language, Translation> = {
+export const translations = {
+  fa: {
+    untitled: "بدون عنوان",
+    newDocButton: "صفحه جدید",
+    searchDocs: "جستجو در صفحات...",
+    noDocs: "هنوز صفحه‌ای ساخته نشده",
+  },
   en: {
-    dir: "ltr",
-    font: "font-sans",
-    sidebarTitle: "Workspace",
-    newDocButton: "New Page",
-    placeholderTitle: "Untitled",
-    placeholderContent: "Type '/' for commands...",
-    blockTypeText: "Text",
-    blockTypeHeading: "Heading",
-    blockTypeTodo: "To-do",
-    switchLang: "فارسی",
-    deleteDoc: "Delete",
     untitled: "Untitled",
+    newDocButton: "New Page",
     searchDocs: "Search pages...",
     noDocs: "No pages yet",
-    createFirst: "Create first page",
   },
-  fa: {
-    dir: "rtl",
-    font: "font-vazir",
-    sidebarTitle: "فضای کاری",
-    newDocButton: "صفحه جدید",
-    placeholderTitle: "بدون عنوان",
-    placeholderContent: "برای کامندها '/' را بزنید...",
-    blockTypeText: "متن",
-    blockTypeHeading: "تیتر",
-    blockTypeTodo: "وظیفه",
-    switchLang: "English",
-    deleteDoc: "حذف",
-    untitled: "بدون عنوان",
-    searchDocs: "جستجوی صفحات...",
-    noDocs: "صفحه‌ای نیست",
-    createFirst: "ساخت اولین صفحه",
-  },
-};
+} as const;
