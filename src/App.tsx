@@ -4,6 +4,29 @@ import { Editor } from "./components/Editor";
 import { useDocumentStore } from "./store/useDocumentStore";
 import { Toaster, toast } from "react-hot-toast";
 
+const matchesShortcut = (
+  event: KeyboardEvent,
+  code: string,
+  options?: {
+    altKey?: boolean;
+    shiftKey?: boolean;
+    ctrlOrMeta?: boolean;
+  },
+) => {
+  if (event.isComposing) {
+    return false;
+  }
+
+  return (
+    event.code === code &&
+    Boolean(event.altKey) === Boolean(options?.altKey) &&
+    Boolean(event.shiftKey) === Boolean(options?.shiftKey) &&
+    (options?.ctrlOrMeta
+      ? event.ctrlKey || event.metaKey
+      : !event.ctrlKey && !event.metaKey)
+  );
+};
+
 function App() {
   const [lang, setLang] = useState<"en" | "fa">(() => {
     return (localStorage.getItem("lang") as "en" | "fa") || "fa"; // پیش‌فرض فارسی
@@ -16,15 +39,17 @@ function App() {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === "n") {
+      if (
+        matchesShortcut(e, "KeyN", { altKey: true }) ||
+        matchesShortcut(e, "KeyN", { altKey: true, ctrlOrMeta: true })
+      ) {
         e.preventDefault();
         createDocument();
         toast.success("صفحه جدید ساخته شد");
       }
       if (
-        (e.ctrlKey || e.metaKey) &&
-        e.shiftKey &&
-        e.key.toLowerCase() === "d"
+        matchesShortcut(e, "KeyT", { altKey: true }) ||
+        matchesShortcut(e, "KeyT", { altKey: true, ctrlOrMeta: true })
       ) {
         e.preventDefault();
         setDark((prev) => !prev);

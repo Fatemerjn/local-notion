@@ -104,6 +104,14 @@ export const Sidebar = ({ lang, onLangToggle }: Props) => {
           ))
         )}
       </div>
+
+      <div className="border-t border-slate-200 dark:border-slate-800 px-4 py-3 text-xs text-slate-500 dark:text-slate-400">
+        <div className="font-medium text-slate-700 dark:text-slate-300">
+          {t.shortcutsTitle}
+        </div>
+        <div className="mt-1">{t.shortcutNewPage}</div>
+        <div>{t.shortcutTheme}</div>
+      </div>
     </aside>
   );
 };
