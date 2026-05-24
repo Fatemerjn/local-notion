@@ -1,7 +1,17 @@
-import React from "react";
-import { Plus } from "lucide-react";
+import React, { useRef, useState } from "react";
+import { Copy, Download, Plus, Upload } from "lucide-react";
+import { toast } from "react-hot-toast";
 import { translations } from "@/i18n/translations";
-import { useActiveDocument, useWorkspaceActions } from "@/store/selectors";
+import { downloadJson, createPageExportName, createWorkspaceExportName } from "@/lib/export";
+import {
+  useActiveDocument,
+  useDocuments,
+  useWorkspaceActions,
+} from "@/store/selectors";
+import {
+  cloneDocumentForImport,
+  normalizeDocument,
+} from "@/store/documentStore.utils";
 import Block from "./Block";
 
 interface Props {
@@ -11,7 +21,16 @@ interface Props {
 export const Editor: React.FC<Props> = ({ lang }) => {
   const t = translations[lang];
   const activeDocument = useActiveDocument();
-  const { addBlock, updateDocumentTitle } = useWorkspaceActions();
+  const documents = useDocuments();
+  const importInputRef = useRef<HTMLInputElement>(null);
+  const [pendingFocusId, setPendingFocusId] = useState<string | null>(null);
+  const {
+    addBlock,
+    duplicateDocument,
+    replaceDocuments,
+    updateDocument,
+    updateDocumentTitle,
+  } = useWorkspaceActions();
 
   if (!activeDocument) {
     return (
@@ -21,10 +40,153 @@ export const Editor: React.FC<Props> = ({ lang }) => {
     );
   }
 
+  const handleCreateBlock = (afterBlockId?: string) => {
+    const newBlockId = addBlock("text", {
+      docId: activeDocument.id,
+      afterBlockId,
+    });
+
+    if (newBlockId) {
+      setPendingFocusId(newBlockId);
+    }
+  };
+
+  const handleDuplicatePage = () => {
+    duplicateDocument(activeDocument.id);
+  };
+
+  const handleExportPage = () => {
+    downloadJson(createPageExportName(activeDocument.title), {
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      document: activeDocument,
+    });
+    toast.success(t.pageExported);
+  };
+
+  const handleExportWorkspace = () => {
+    downloadJson(createWorkspaceExportName(), {
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      workspace: {
+        documents,
+        activeDocId: activeDocument.id,
+      },
+    });
+    toast.success(t.workspaceExported);
+  };
+
+  const handleImportFile = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = event.target.files?.[0];
+    if (!file) {
+      return;
+    }
+
+    try {
+      const raw = await file.text();
+      const parsed = JSON.parse(raw) as
+        | {
+            document?: unknown;
+            documents?: unknown[];
+            workspace?: {
+              documents?: unknown[];
+              activeDocId?: string | null;
+            };
+          }
+        | undefined;
+
+      const incomingDocuments = Array.isArray(parsed?.workspace?.documents)
+        ? parsed.workspace?.documents
+        : Array.isArray(parsed?.documents)
+          ? parsed.documents
+          : parsed?.document
+            ? [parsed.document]
+            : [];
+
+      if (incomingDocuments.length === 0) {
+        throw new Error("No documents");
+      }
+
+      const normalizedDocuments = incomingDocuments.map((document) =>
+        cloneDocumentForImport(normalizeDocument(document)),
+      );
+
+      replaceDocuments({
+        documents: [...normalizedDocuments, ...documents],
+        activeDocId: normalizedDocuments[0]?.id,
+      });
+      toast.success(t.workspaceImported);
+    } catch {
+      toast.error(t.importFailed);
+    } finally {
+      event.target.value = "";
+    }
+  };
+
   return (
     <div className="flex-1 overflow-auto p-8">
       <div className="mx-auto max-w-3xl">
-        <div className="mb-8">
+        <div
+          className="h-44 rounded-[28px] border border-slate-200/70 bg-cover bg-center shadow-sm dark:border-slate-700/80"
+          style={{ background: activeDocument.cover }}
+        />
+
+        <div className="-mt-10 mb-8 px-4">
+          <div className="flex flex-wrap items-center gap-3">
+            <input
+              type="text"
+              value={activeDocument.icon ?? ""}
+              onChange={(event) =>
+                updateDocument(activeDocument.id, {
+                  icon: event.target.value.slice(0, 2),
+                })
+              }
+              aria-label={t.pageIconLabel}
+              placeholder={t.pageIconPlaceholder}
+              className="h-14 w-16 rounded-2xl border border-slate-200 bg-white/90 text-center text-3xl shadow-sm outline-none backdrop-blur dark:border-slate-700 dark:bg-slate-900/90"
+            />
+            <button
+              onClick={handleDuplicatePage}
+              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+            >
+              <Copy size={16} />
+              <span>{t.duplicatePage}</span>
+            </button>
+            <button
+              onClick={handleExportPage}
+              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+            >
+              <Download size={16} />
+              <span>{t.exportPage}</span>
+            </button>
+            <button
+              onClick={handleExportWorkspace}
+              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+            >
+              <Download size={16} />
+              <span>{t.exportWorkspace}</span>
+            </button>
+            <button
+              onClick={() => importInputRef.current?.click()}
+              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+            >
+              <Upload size={16} />
+              <span>{t.importWorkspace}</span>
+            </button>
+            <input
+              ref={importInputRef}
+              type="file"
+              accept="application/json"
+              onChange={handleImportFile}
+              className="hidden"
+            />
+          </div>
+          <div className="mt-2 text-xs text-slate-400">{t.importHint}</div>
+        </div>
+
+        <div className="mb-8 px-4">
           <input
             type="text"
             value={activeDocument.title}
@@ -41,7 +203,7 @@ export const Editor: React.FC<Props> = ({ lang }) => {
             <div className="py-20 text-center text-slate-400">
               <p className="text-lg">هیچ بلاکی وجود ندارد</p>
               <button
-                onClick={() => addBlock("text", { docId: activeDocument.id })}
+                onClick={() => handleCreateBlock()}
                 className="mx-auto mt-6 flex items-center gap-2 rounded-xl bg-black px-6 py-3 text-white transition hover:bg-zinc-800"
               >
                 <Plus size={18} />
@@ -49,15 +211,31 @@ export const Editor: React.FC<Props> = ({ lang }) => {
               </button>
             </div>
           ) : (
-            activeDocument.blocks.map((block) => (
-              <Block key={block.id} block={block} docId={activeDocument.id} />
+            activeDocument.blocks.map((block, index) => (
+              <Block
+                key={block.id}
+                block={block}
+                docId={activeDocument.id}
+                lang={lang}
+                index={index}
+                totalBlocks={activeDocument.blocks.length}
+                previousBlockId={activeDocument.blocks[index - 1]?.id ?? null}
+                nextBlockId={activeDocument.blocks[index + 1]?.id ?? null}
+                shouldFocus={pendingFocusId === block.id}
+                onFocusHandled={() => setPendingFocusId(null)}
+                onRequestFocus={(blockId) => setPendingFocusId(blockId)}
+              />
             ))
           )}
         </div>
 
         {activeDocument.blocks.length > 0 && (
           <button
-            onClick={() => addBlock("text", { docId: activeDocument.id })}
+            onClick={() =>
+              handleCreateBlock(
+                activeDocument.blocks[activeDocument.blocks.length - 1]?.id,
+              )
+            }
             className="mt-8 flex items-center gap-2 text-sm text-slate-400 transition hover:text-slate-600 dark:hover:text-slate-200"
           >
             <Plus size={18} />

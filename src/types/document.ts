@@ -20,11 +20,18 @@ export interface ReplaceDocumentsPayload {
   activeDocId?: string | null;
 }
 
+export interface UpdateDocumentPayload {
+  title?: string;
+  icon?: string;
+  cover?: string;
+}
+
 export interface DocumentStore extends PersistedWorkspaceState {
   createDocument: (title?: string) => string;
   duplicateDocument: (id: string) => string | null;
   replaceDocuments: (payload: ReplaceDocumentsPayload) => void;
   setActiveDocId: (id: string) => void;
+  updateDocument: (id: string, updates: UpdateDocumentPayload) => void;
   updateDocumentTitle: (id: string, title: string) => void;
   deleteDocument: (id: string) => void;
 

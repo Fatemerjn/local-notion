@@ -4,4 +4,5 @@ export type {
   DocumentStore,
   PersistedWorkspaceState,
   ReplaceDocumentsPayload,
+  UpdateDocumentPayload,
 } from "./document";

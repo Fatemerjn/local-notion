@@ -210,5 +210,17 @@ export const cloneBlock = (block: Block): Block => ({
   updatedAt: new Date(),
 });
 
+export const cloneDocumentForImport = (document: Document): Document => {
+  const now = new Date();
+
+  return {
+    ...document,
+    id: crypto.randomUUID(),
+    blocks: document.blocks.map((block) => cloneBlock(block)),
+    createdAt: now,
+    updatedAt: now,
+  };
+};
+
 export const ensureDocuments = (documents: Document[]): Document[] =>
   documents.length > 0 ? documents : [createBlankDocument()];

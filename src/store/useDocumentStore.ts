@@ -5,6 +5,7 @@ import type {
   Document,
   DocumentStore,
   ReplaceDocumentsPayload,
+  UpdateDocumentPayload,
 } from "@/types";
 import { createNewBlock } from "@/utils/blockUtils";
 import {
@@ -94,6 +95,25 @@ export const useDocumentStore = create<DocumentStore>((set, get) => ({
       const nextState = {
         documents: state.documents,
         activeDocId: id,
+      };
+      persistWorkspace(nextState);
+      return nextState;
+    }),
+
+  updateDocument: (id: string, updates: UpdateDocumentPayload) =>
+    set((state) => {
+      const documents = state.documents.map((document) =>
+        document.id === id
+          ? {
+              ...document,
+              ...updates,
+              updatedAt: new Date(),
+            }
+          : document,
+      );
+      const nextState = {
+        documents,
+        activeDocId: state.activeDocId,
       };
       persistWorkspace(nextState);
       return nextState;

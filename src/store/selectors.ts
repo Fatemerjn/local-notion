@@ -17,6 +17,7 @@ export const useWorkspaceActions = () =>
     duplicateDocument: state.duplicateDocument,
     replaceDocuments: state.replaceDocuments,
     setActiveDocId: state.setActiveDocId,
+    updateDocument: state.updateDocument,
     updateDocumentTitle: state.updateDocumentTitle,
     deleteDocument: state.deleteDocument,
     addBlock: state.addBlock,
