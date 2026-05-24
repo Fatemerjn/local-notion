@@ -9,14 +9,14 @@ interface BlockProps {
   docId: string;
 }
 
-const BlockComponent: React.FC<BlockProps> = ({ block }) => {
+const BlockComponent: React.FC<BlockProps> = ({ block, docId }) => {
   const { updateBlock } = useDocumentStore();
   const inputRef = useRef<HTMLInputElement | HTMLTextAreaElement>(null);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
-    updateBlock(block.id, { content: e.target.value });
+    updateBlock(block.id, { content: e.target.value }, docId);
   };
 
   const isTodo = block.type === "todo";
@@ -32,7 +32,7 @@ const BlockComponent: React.FC<BlockProps> = ({ block }) => {
             type="checkbox"
             checked={block.checked || false}
             onChange={(e) =>
-              updateBlock(block.id, { checked: e.target.checked })
+              updateBlock(block.id, { checked: e.target.checked }, docId)
             }
             className="mt-2"
           />

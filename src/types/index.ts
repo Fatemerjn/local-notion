@@ -1,52 +1,43 @@
-export type BlockType =
-  | "text"
-  | "heading1"
-  | "heading2"
-  | "heading3"
-  | "bulleted-list"
-  | "numbered-list"
-  | "todo"
-  | "toggle"
-  | "quote"
-  | "code"
-  | "image"
-  | "divider"
-  | "page"
-  | "database";
-
-export interface Block {
-  id: string;
-  type: BlockType;
-  content: string;
-  children: string[];
-  parentId: string | null;
-  createdAt: Date;
-  updatedAt: Date;
-  checked?: boolean;
-}
+export type { Block, BlockType } from "./block";
+import type { Block, BlockType } from "./block";
 
 export interface Document {
   id: string;
   title: string;
   icon?: string;
   cover?: string;
-  blocks: string[];
+  blocks: Block[];
   createdAt: Date;
   updatedAt: Date;
 }
 
-export interface DocumentStore {
+export interface PersistedWorkspaceState {
   documents: Document[];
   activeDocId: string | null;
-  blocks: Block[];
+}
 
-  createDocument: (title?: string) => void;
+export interface ReplaceDocumentsPayload {
+  documents: Document[];
+  activeDocId?: string | null;
+}
+
+export interface DocumentStore extends PersistedWorkspaceState {
+  createDocument: (title?: string) => string;
+  duplicateDocument: (id: string) => string | null;
+  replaceDocuments: (payload: ReplaceDocumentsPayload) => void;
   setActiveDocId: (id: string) => void;
   updateDocumentTitle: (id: string, title: string) => void;
   deleteDocument: (id: string) => void;
 
-  addBlock: (type: BlockType, index?: number) => void;
-  updateBlock: (id: string, updates: Partial<Block>) => void;
-  deleteBlock: (id: string) => void;
-  moveBlock: (fromIndex: number, toIndex: number) => void;
+  addBlock: (
+    type?: BlockType,
+    options?: { docId?: string; afterBlockId?: string },
+  ) => string | null;
+  updateBlock: (id: string, updates: Partial<Block>, docId?: string) => void;
+  deleteBlock: (id: string, docId?: string) => void;
+  moveBlock: (fromIndex: number, toIndex: number, docId?: string) => void;
+  setBlockType: (id: string, type: BlockType, docId?: string) => void;
+  toggleBlockChecked: (id: string, docId?: string) => void;
+  toggleBlockCollapsed: (id: string, docId?: string) => void;
+  duplicateBlock: (id: string, docId?: string) => string | null;
 }

@@ -50,10 +50,10 @@ export const createNewBlock = (
   return {
     id: crypto.randomUUID(),
     type,
-    content: content || getBlockPlaceholder(type),
-    children: [],
-    parentId: null,
+    content,
     createdAt: new Date(),
     updatedAt: new Date(),
+    checked: type === "todo" ? false : undefined,
+    collapsed: type === "toggle" ? false : undefined,
   };
 };

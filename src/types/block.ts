@@ -18,10 +18,8 @@ export interface Block {
   id: string;
   type: BlockType;
   content: string;
-  children: string[];
-  parentId: string | null;
   createdAt: Date;
   updatedAt: Date;
-  checked?: boolean; // برای todo
-  properties?: Record<string, any>;
+  checked?: boolean;
+  collapsed?: boolean;
 }
