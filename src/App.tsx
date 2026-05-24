@@ -1,31 +1,9 @@
 import { useState, useEffect } from "react";
-import { Sidebar } from "./components/Sidebar";
-import { Editor } from "./components/Editor";
-import { useDocumentStore } from "./store/useDocumentStore";
+import { Editor } from "@/components/editor";
+import { Sidebar } from "@/components/layout";
+import { matchesShortcut } from "@/lib/shortcuts";
+import { useWorkspaceActions } from "@/store/selectors";
 import { Toaster, toast } from "react-hot-toast";
-
-const matchesShortcut = (
-  event: KeyboardEvent,
-  code: string,
-  options?: {
-    altKey?: boolean;
-    shiftKey?: boolean;
-    ctrlOrMeta?: boolean;
-  },
-) => {
-  if (event.isComposing) {
-    return false;
-  }
-
-  return (
-    event.code === code &&
-    Boolean(event.altKey) === Boolean(options?.altKey) &&
-    Boolean(event.shiftKey) === Boolean(options?.shiftKey) &&
-    (options?.ctrlOrMeta
-      ? event.ctrlKey || event.metaKey
-      : !event.ctrlKey && !event.metaKey)
-  );
-};
 
 function App() {
   const [lang, setLang] = useState<"en" | "fa">(() => {
@@ -35,7 +13,7 @@ function App() {
     () => localStorage.getItem("theme") === "dark",
   );
 
-  const { createDocument } = useDocumentStore();
+  const { createDocument } = useWorkspaceActions();
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
