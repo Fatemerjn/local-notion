@@ -3,6 +3,7 @@ import { Editor } from "@/components/editor";
 import { Sidebar } from "@/components/layout";
 import { matchesShortcut } from "@/lib/shortcuts";
 import { useWorkspaceActions } from "@/store/selectors";
+import { Menu } from "lucide-react";
 import { Toaster, toast } from "react-hot-toast";
 
 function App() {
@@ -12,6 +13,7 @@ function App() {
   const [dark, setDark] = useState(
     () => localStorage.getItem("theme") === "dark",
   );
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const { createDocument } = useWorkspaceActions();
 
@@ -46,12 +48,32 @@ function App() {
 
   return (
     <div
-      className={`flex h-screen w-full overflow-hidden ${lang === "fa" ? "font-vazir" : "font-sans"}`}
+      className={`relative flex h-dvh w-full overflow-hidden bg-white dark:bg-slate-950 ${lang === "fa" ? "font-vazir" : "font-sans"}`}
     >
       <Toaster position="bottom-right" />
+      <button
+        type="button"
+        onClick={() => setSidebarOpen(true)}
+        className="fixed right-3 top-3 z-40 rounded-xl border border-slate-200 bg-white/90 p-2 shadow-sm backdrop-blur dark:border-slate-700 dark:bg-slate-900/90 md:hidden"
+        aria-label="Open sidebar"
+      >
+        <Menu size={20} />
+      </button>
+      {sidebarOpen && (
+        <button
+          type="button"
+          onClick={() => setSidebarOpen(false)}
+          className="fixed inset-0 z-40 bg-black/25 md:hidden"
+          aria-label="Close sidebar overlay"
+        />
+      )}
       <Sidebar
         lang={lang}
         onLangToggle={() => setLang((l) => (l === "en" ? "fa" : "en"))}
+        onNavigate={() => setSidebarOpen(false)}
+        className={`fixed inset-y-0 right-0 z-50 transition-transform duration-200 md:static md:z-auto md:translate-x-0 ${
+          sidebarOpen ? "translate-x-0" : "translate-x-full"
+        }`}
       />
       <Editor lang={lang} />
       <button

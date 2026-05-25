@@ -3,6 +3,7 @@ import {
   ChevronRight,
   Copy,
   GripVertical,
+  Plus,
   Trash2,
 } from "lucide-react";
 import TextareaAutosize from "react-textarea-autosize";
@@ -60,6 +61,7 @@ const Block: React.FC<BlockProps> = ({
   } = useWorkspaceActions();
   const inputRef = useRef<HTMLInputElement | HTMLTextAreaElement>(null);
   const [activeCommandIndex, setActiveCommandIndex] = useState(0);
+  const [isTypeMenuOpen, setIsTypeMenuOpen] = useState(false);
   const placeholder = getBlockPlaceholder(block.type as BlockType);
   const isTodo = block.type === "todo";
   const isHeading = ["heading1", "heading2", "heading3"].includes(block.type);
@@ -67,20 +69,25 @@ const Block: React.FC<BlockProps> = ({
   const isCode = block.type === "code";
   const isToggle = block.type === "toggle";
   const isDivider = block.type === "divider";
-  const slashQuery = block.content.startsWith("/")
-    ? block.content.slice(1).trim().toLowerCase()
+  const trimmedContent = block.content.trimStart();
+  const slashMatch = trimmedContent.match(/^[/\\](.*)$/);
+  const slashQuery = slashMatch
+    ? slashMatch[1].trim().toLowerCase()
     : "";
+  const commandQuery = isTypeMenuOpen ? "" : slashQuery;
   const filteredCommands = BLOCK_COMMANDS.filter((command) => {
-    if (!slashQuery) {
+    if (!commandQuery) {
       return true;
     }
 
     return [command.labelFa, command.labelEn, command.type].some((value) =>
-      value.toLowerCase().includes(slashQuery),
+      value.toLowerCase().includes(commandQuery),
     );
   });
   const isCommandMenuOpen =
-    !isDivider && block.content.startsWith("/") && filteredCommands.length > 0;
+    !isDivider &&
+    (isTypeMenuOpen || Boolean(slashMatch)) &&
+    filteredCommands.length > 0;
 
   const handleChange = (
     event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
@@ -116,13 +123,11 @@ const Block: React.FC<BlockProps> = ({
 
   const selectCommand = (type: BlockType) => {
     setBlockType(block.id, type, docId);
-    updateBlock(
-      block.id,
-      {
-        content: type === "divider" ? "" : "",
-      },
-      docId,
-    );
+    updateBlock(block.id, { content: slashMatch || type === "divider" ? "" : block.content }, docId);
+    setIsTypeMenuOpen(false);
+    if (type !== "divider") {
+      onRequestFocus(block.id);
+    }
   };
 
   const focusSibling = (blockId: string | null) => {
@@ -180,6 +185,7 @@ const Block: React.FC<BlockProps> = ({
 
       if (event.key === "Escape") {
         event.preventDefault();
+        setIsTypeMenuOpen(false);
         updateBlock(block.id, { content: "" }, docId);
         return;
       }
@@ -222,12 +228,21 @@ const Block: React.FC<BlockProps> = ({
   };
 
   const renderHandle = () => (
-    <div className="mt-1 hidden w-8 shrink-0 items-start justify-center gap-1 text-zinc-300 group-hover:flex">
+    <div className="mt-1 flex w-16 shrink-0 items-start justify-center gap-1 text-zinc-300 sm:w-14">
+      <button
+        type="button"
+        onClick={() => setIsTypeMenuOpen((current) => !current)}
+        className="rounded p-1 text-zinc-400 transition hover:bg-zinc-200 hover:text-zinc-700 dark:hover:bg-zinc-700"
+        aria-label="Change block type"
+      >
+        <Plus size={15} />
+      </button>
       <button
         type="button"
         onClick={() => moveBlockBy(-1)}
-        className="rounded p-1 transition hover:bg-zinc-200 hover:text-zinc-600 dark:hover:bg-zinc-700"
+        className="hidden rounded p-1 transition hover:bg-zinc-200 hover:text-zinc-600 disabled:opacity-30 dark:hover:bg-zinc-700 sm:block"
         disabled={index === 0}
+        aria-label="Move block up"
       >
         <GripVertical size={14} />
       </button>
@@ -336,26 +351,31 @@ const Block: React.FC<BlockProps> = ({
             )}
 
             {isCommandMenuOpen && (
-              <div className="absolute left-10 top-full z-20 mt-2 w-80 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl dark:border-slate-700 dark:bg-slate-900">
+              <div className="absolute inset-x-2 top-full z-50 mt-2 max-h-80 overflow-y-auto rounded-2xl border border-slate-200 bg-white shadow-xl dark:border-slate-700 dark:bg-slate-900 sm:inset-x-auto sm:w-80">
                 {filteredCommands.map((command, commandIndex) => (
                   <button
                     key={command.type}
                     type="button"
                     onMouseDown={(event) => event.preventDefault()}
                     onClick={() => selectCommand(command.type)}
-                    className={`flex w-full items-start justify-between px-4 py-3 text-left transition ${
+                    className={`flex w-full items-start justify-between gap-4 px-4 py-3 text-start transition ${
                       commandIndex === activeCommandIndex
                         ? "bg-slate-100 dark:bg-slate-800"
                         : "hover:bg-slate-50 dark:hover:bg-slate-800/80"
                     }`}
                   >
-                    <span className="font-medium text-slate-700 dark:text-slate-100">
-                      {lang === "fa" ? command.labelFa : command.labelEn}
+                    <span className="flex min-w-0 flex-col">
+                      <span className="font-medium text-slate-700 dark:text-slate-100">
+                        {lang === "fa" ? command.labelFa : command.labelEn}
+                      </span>
+                      <span className="text-xs text-slate-400">
+                        {lang === "fa"
+                          ? command.descriptionFa
+                          : command.descriptionEn}
+                      </span>
                     </span>
-                    <span className="text-xs text-slate-400">
-                      {lang === "fa"
-                        ? command.descriptionFa
-                        : command.descriptionEn}
+                    <span className="rounded-md bg-slate-100 px-2 py-1 text-xs text-slate-500 dark:bg-slate-800">
+                      /{command.type}
                     </span>
                   </button>
                 ))}

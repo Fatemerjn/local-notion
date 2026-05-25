@@ -12,9 +12,11 @@ import {
 interface Props {
   lang: "en" | "fa";
   onLangToggle: () => void;
+  onNavigate?: () => void;
+  className?: string;
 }
 
-export const Sidebar = ({ lang, onLangToggle }: Props) => {
+export const Sidebar = ({ lang, onLangToggle, onNavigate, className = "" }: Props) => {
   const t = translations[lang];
   const documents = useDocuments();
   const activeDocId = useActiveDocId();
@@ -26,7 +28,9 @@ export const Sidebar = ({ lang, onLangToggle }: Props) => {
   );
 
   return (
-    <aside className="flex h-full w-72 flex-col border-r border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-900">
+    <aside
+      className={`flex h-full w-80 max-w-[86vw] flex-col border-r border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-900 md:w-72 ${className}`}
+    >
       <div className="border-b border-slate-200 p-4 dark:border-slate-800">
         <div className="mb-4 flex items-center justify-between">
           <h1 className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-xl font-bold text-transparent">
@@ -41,7 +45,10 @@ export const Sidebar = ({ lang, onLangToggle }: Props) => {
         </div>
 
         <button
-          onClick={() => createDocument(t.untitled)}
+          onClick={() => {
+            createDocument(t.untitled);
+            onNavigate?.();
+          }}
           className="flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 py-2 text-white transition hover:bg-blue-700"
         >
           <Plus size={16} />
@@ -72,7 +79,10 @@ export const Sidebar = ({ lang, onLangToggle }: Props) => {
           filteredDocs.map((document) => (
             <div
               key={document.id}
-              onClick={() => setActiveDocId(document.id)}
+              onClick={() => {
+                setActiveDocId(document.id);
+                onNavigate?.();
+              }}
               className={`group flex cursor-pointer items-center justify-between rounded-lg px-3 py-2 transition ${
                 document.id === activeDocId
                   ? "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-200"

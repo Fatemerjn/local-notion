@@ -2,7 +2,11 @@ import React, { useRef, useState } from "react";
 import { Copy, Download, Plus, Upload } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { translations } from "@/i18n/translations";
-import { downloadJson, createPageExportName, createWorkspaceExportName } from "@/lib/export";
+import {
+  createPageExportName,
+  createWorkspaceExportName,
+  downloadJson,
+} from "@/lib/export";
 import {
   useActiveDocument,
   useDocuments,
@@ -126,15 +130,15 @@ export const Editor: React.FC<Props> = ({ lang }) => {
   };
 
   return (
-    <div className="flex-1 overflow-auto p-8">
+    <div className="flex-1 overflow-auto px-3 pb-24 pt-16 sm:px-6 md:p-8">
       <div className="mx-auto max-w-3xl">
         <div
-          className="h-44 rounded-[28px] border border-slate-200/70 bg-cover bg-center shadow-sm dark:border-slate-700/80"
+          className="h-28 rounded-2xl border border-slate-200/70 bg-cover bg-center shadow-sm dark:border-slate-700/80 sm:h-36 md:h-44 md:rounded-[28px]"
           style={{ background: activeDocument.cover }}
         />
 
-        <div className="-mt-10 mb-8 px-4">
-          <div className="flex flex-wrap items-center gap-3">
+        <div className="-mt-7 mb-6 px-2 sm:-mt-10 sm:mb-8 sm:px-4">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             <input
               type="text"
               value={activeDocument.icon ?? ""}
@@ -145,35 +149,39 @@ export const Editor: React.FC<Props> = ({ lang }) => {
               }
               aria-label={t.pageIconLabel}
               placeholder={t.pageIconPlaceholder}
-              className="h-14 w-16 rounded-2xl border border-slate-200 bg-white/90 text-center text-3xl shadow-sm outline-none backdrop-blur dark:border-slate-700 dark:bg-slate-900/90"
+              className="h-12 w-14 rounded-2xl border border-slate-200 bg-white/90 text-center text-2xl shadow-sm outline-none backdrop-blur dark:border-slate-700 dark:bg-slate-900/90 sm:h-14 sm:w-16 sm:text-3xl"
             />
             <button
               onClick={handleDuplicatePage}
-              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+              className="inline-flex h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+              title={t.duplicatePage}
             >
               <Copy size={16} />
-              <span>{t.duplicatePage}</span>
+              <span className="hidden sm:inline">{t.duplicatePage}</span>
             </button>
             <button
               onClick={handleExportPage}
-              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+              className="inline-flex h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+              title={t.exportPage}
             >
               <Download size={16} />
-              <span>{t.exportPage}</span>
+              <span className="hidden sm:inline">{t.exportPage}</span>
             </button>
             <button
               onClick={handleExportWorkspace}
-              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+              className="inline-flex h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+              title={t.exportWorkspace}
             >
               <Download size={16} />
-              <span>{t.exportWorkspace}</span>
+              <span className="hidden sm:inline">{t.exportWorkspace}</span>
             </button>
             <button
               onClick={() => importInputRef.current?.click()}
-              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+              className="inline-flex h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+              title={t.importWorkspace}
             >
               <Upload size={16} />
-              <span>{t.importWorkspace}</span>
+              <span className="hidden sm:inline">{t.importWorkspace}</span>
             </button>
             <input
               ref={importInputRef}
@@ -183,10 +191,12 @@ export const Editor: React.FC<Props> = ({ lang }) => {
               className="hidden"
             />
           </div>
-          <div className="mt-2 text-xs text-slate-400">{t.importHint}</div>
+          <div className="mt-2 hidden text-xs text-slate-400 sm:block">
+            {t.importHint}
+          </div>
         </div>
 
-        <div className="mb-8 px-4">
+        <div className="mb-6 px-2 sm:mb-8 sm:px-4">
           <input
             type="text"
             value={activeDocument.title}
@@ -194,7 +204,7 @@ export const Editor: React.FC<Props> = ({ lang }) => {
               updateDocumentTitle(activeDocument.id, event.target.value)
             }
             placeholder={t.untitled}
-            className="w-full bg-transparent text-4xl font-bold outline-none placeholder:text-slate-300"
+            className="w-full bg-transparent text-3xl font-bold outline-none placeholder:text-slate-300 sm:text-4xl"
           />
         </div>
 
