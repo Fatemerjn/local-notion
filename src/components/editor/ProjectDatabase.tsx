@@ -85,6 +85,7 @@ const labels = {
     status: "وضعیت",
     typeToCreate: "انتخاب کن یا گزینه جدید بساز",
     addOption: "اضافه کن",
+    close: "بستن",
     edit: "ویرایش",
     delete: "حذف",
   },
@@ -109,6 +110,7 @@ const labels = {
     status: "Status",
     typeToCreate: "Select an option or create one",
     addOption: "Add",
+    close: "Close",
     edit: "Edit",
     delete: "Delete",
   },
@@ -172,7 +174,7 @@ export const ProjectDatabase = ({
     projects: "",
     categories: "",
   });
-  const [expandedBoardRowId, setExpandedBoardRowId] = useState<string | null>(null);
+  const [editingBoardRowId, setEditingBoardRowId] = useState<string | null>(null);
 
   const updateDatabase = (updates: Partial<DatabaseBlockProperties>) => {
     updateBlock(
@@ -485,7 +487,7 @@ export const ProjectDatabase = ({
             setSortByDeadline((current) => !current);
             setGroupByCategory(false);
           }}
-          className={`rounded-md p-1.5 transition ${
+          className={`group relative rounded-md p-1.5 transition ${
             sortByDeadline
               ? "bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-200"
               : "text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-900"
@@ -493,7 +495,9 @@ export const ProjectDatabase = ({
           title={text.sort}
         >
           <ArrowUpDown size={16} />
-          <span className="hidden px-1 text-xs sm:inline">{text.sortShort}</span>
+          <span className="pointer-events-none absolute left-1/2 top-full z-50 mt-2 -translate-x-1/2 whitespace-nowrap rounded-md bg-slate-900 px-2 py-1 text-xs text-white opacity-0 shadow-lg transition group-hover:opacity-100 dark:bg-slate-100 dark:text-slate-900">
+            {text.sortShort}
+          </span>
         </button>
         <button
           type="button"
@@ -701,159 +705,90 @@ export const ProjectDatabase = ({
   );
 
   const renderBoard = () => (
-    <div className="grid gap-4 md:grid-cols-4">
-      {statusOptions.map((status) => {
-        const statusRows = displayedRows.filter((row) => row.status === status.value);
+    <div className="-mx-3 overflow-x-auto px-3 pb-3">
+      <div className="flex min-w-max gap-4">
+        {statusOptions.map((status) => {
+          const statusRows = displayedRows.filter((row) => row.status === status.value);
 
-        return (
-          <div
-            key={status.value}
-            onDragOver={(event) => event.preventDefault()}
-            onDrop={(event) => {
-              const rowId = event.dataTransfer.getData("text/project-row-id");
-              if (rowId) {
-                updateProjectRow(block.id, rowId, { status: status.value }, docId);
-              }
-            }}
-            className="min-h-52 rounded-xl bg-slate-50 p-3 dark:bg-slate-900/70"
-          >
-            <div className="mb-3 flex items-center justify-between">
-              <span
-                className={`rounded-md px-2 py-1 text-sm font-medium ${getStatusTone(
-                  status.value,
-                )}`}
-              >
-                {status.label[lang]}
-              </span>
-              <span className="text-sm text-slate-400">{statusRows.length}</span>
-            </div>
-            <div className="space-y-2">
-              {statusRows.map((row) => (
-                <div
-                  key={row.id}
-                  draggable={expandedBoardRowId !== row.id}
-                  onDragStart={(event) =>
-                    event.dataTransfer.setData("text/project-row-id", row.id)
-                  }
-                  className="cursor-grab rounded-xl border border-slate-200 bg-white p-3 shadow-sm active:cursor-grabbing dark:border-slate-800 dark:bg-slate-950"
+          return (
+            <div
+              key={status.value}
+              onDragOver={(event) => event.preventDefault()}
+              onDrop={(event) => {
+                const rowId = event.dataTransfer.getData("text/project-row-id");
+                if (rowId) {
+                  updateProjectRow(block.id, rowId, { status: status.value }, docId);
+                }
+              }}
+              className="min-h-52 w-80 shrink-0 rounded-xl bg-slate-50 p-3 dark:bg-slate-900/70 lg:w-96"
+            >
+              <div className="mb-3 flex items-center justify-between">
+                <span
+                  className={`rounded-md px-2 py-1 text-sm font-medium ${getStatusTone(
+                    status.value,
+                  )}`}
                 >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="font-medium text-slate-900 dark:text-slate-100">
-                      {row.title || text.project}
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setExpandedBoardRowId((current) =>
-                          current === row.id ? null : row.id,
-                        )
-                      }
-                      className="rounded-md px-2 py-1 text-xs text-slate-500 transition hover:bg-slate-100 dark:hover:bg-slate-800"
-                    >
-                      {text.edit}
-                    </button>
-                  </div>
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {row.category && (
-                      <span className="rounded-md bg-amber-100 px-2 py-1 text-xs text-amber-800 dark:bg-amber-950 dark:text-amber-100">
-                        {row.category}
-                      </span>
-                    )}
-                    {row.deadline && (
-                      <span
-                        className={`rounded-md px-2 py-1 text-xs ${getCountdownTone(
-                          row.deadline,
-                        )}`}
-                      >
-                        {getCountdownLabel(row.deadline)}
-                      </span>
-                    )}
-                  </div>
-                  {expandedBoardRowId === row.id && (
-                    <div className="mt-3 space-y-3 border-t border-slate-100 pt-3 dark:border-slate-800">
-                      <div>
-                        <div className="mb-1 text-xs text-slate-400">{text.project}</div>
-                        {renderSelectCell(row, "title", "projects")}
+                  {status.label[lang]}
+                </span>
+                <span className="text-sm text-slate-400">{statusRows.length}</span>
+              </div>
+              <div className="space-y-2">
+                {statusRows.map((row) => (
+                  <button
+                    key={row.id}
+                    type="button"
+                    draggable
+                    onClick={() => setEditingBoardRowId(row.id)}
+                    onDragStart={(event) =>
+                      event.dataTransfer.setData("text/project-row-id", row.id)
+                    }
+                    className="block w-full cursor-grab rounded-xl border border-slate-200 bg-white p-3 text-start shadow-sm transition hover:border-slate-300 hover:shadow-md active:cursor-grabbing dark:border-slate-800 dark:bg-slate-950 dark:hover:border-slate-700"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="font-medium text-slate-900 dark:text-slate-100">
+                        {row.title || text.project}
                       </div>
-                      <div>
-                        <div className="mb-1 text-xs text-slate-400">{text.category}</div>
-                        {renderSelectCell(row, "category", "categories")}
-                      </div>
-                      <select
-                        value={row.status}
-                        onChange={(event) =>
-                          updateProjectRow(
-                            block.id,
-                            row.id,
-                            { status: event.target.value as ProjectStatus },
-                            docId,
-                          )
-                        }
-                        className="w-full rounded-md border border-slate-200 bg-white px-2 py-2 text-sm text-slate-900 outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
-                      >
-                        {statusOptions.map((statusOption) => (
-                          <option key={statusOption.value} value={statusOption.value}>
-                            {statusOption.label[lang]}
-                          </option>
-                        ))}
-                      </select>
-                      {renderDateCell(row)}
-                      <input
-                        value={row.owner}
-                        onChange={(event) =>
-                          updateProjectRow(
-                            block.id,
-                            row.id,
-                            { owner: event.target.value },
-                            docId,
-                          )
-                        }
-                        placeholder={text.owner}
-                        className="w-full rounded-md border border-slate-200 bg-white px-2 py-2 text-sm text-slate-900 outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
-                      />
-                      <textarea
-                        value={row.notes}
-                        onChange={(event) =>
-                          updateProjectRow(
-                            block.id,
-                            row.id,
-                            { notes: event.target.value },
-                            docId,
-                          )
-                        }
-                        placeholder={text.notes}
-                        className="min-h-20 w-full resize-y rounded-md border border-slate-200 bg-white px-2 py-2 text-sm text-slate-900 outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => deleteProjectRow(block.id, row.id, docId)}
-                        className="inline-flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-red-500 transition hover:bg-red-50 dark:hover:bg-red-950"
-                      >
-                        <Trash2 size={14} />
-                        {text.delete}
-                      </button>
+                      <span className="rounded-md px-2 py-1 text-xs text-slate-500">
+                        {text.edit}
+                      </span>
                     </div>
-                  )}
-                </div>
-              ))}
-              <button
-                type="button"
-                onClick={() => {
-                  const newRowId = addProjectRow(block.id, docId);
-                  if (newRowId) {
-                    updateProjectRow(block.id, newRowId, { status: status.value }, docId);
-                    setExpandedBoardRowId(newRowId);
-                  }
-                }}
-                className="flex w-full items-center gap-2 rounded-lg border border-dashed border-slate-300 px-3 py-2 text-sm text-slate-500 transition hover:bg-white dark:border-slate-700 dark:hover:bg-slate-950"
-              >
-                <Plus size={15} />
-                {text.new}
-              </button>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {row.category && (
+                        <span className="rounded-md bg-amber-100 px-2 py-1 text-xs text-amber-800 dark:bg-amber-950 dark:text-amber-100">
+                          {row.category}
+                        </span>
+                      )}
+                      {row.deadline && (
+                        <span
+                          className={`rounded-md px-2 py-1 text-xs ${getCountdownTone(
+                            row.deadline,
+                          )}`}
+                        >
+                          {getCountdownLabel(row.deadline)}
+                        </span>
+                      )}
+                    </div>
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => {
+                    const newRowId = addProjectRow(block.id, docId);
+                    if (newRowId) {
+                      updateProjectRow(block.id, newRowId, { status: status.value }, docId);
+                      setEditingBoardRowId(newRowId);
+                    }
+                  }}
+                  className="flex w-full items-center gap-2 rounded-lg border border-dashed border-slate-300 px-3 py-2 text-sm text-slate-500 transition hover:bg-white dark:border-slate-700 dark:hover:bg-slate-950"
+                >
+                  <Plus size={15} />
+                  {text.new}
+                </button>
+              </div>
             </div>
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
     </div>
   );
 
@@ -908,6 +843,120 @@ export const ProjectDatabase = ({
     </div>
   );
 
+  const renderBoardEditModal = () => {
+    const row = rows.find((item) => item.id === editingBoardRowId);
+    if (!row) {
+      return null;
+    }
+
+    return (
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/35 p-4 backdrop-blur-sm"
+        onClick={() => setEditingBoardRowId(null)}
+      >
+        <div
+          className="max-h-[88vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl dark:border-slate-800 dark:bg-slate-950"
+          onClick={(event) => event.stopPropagation()}
+        >
+          <div className="mb-5 flex items-center justify-between gap-3">
+            <div>
+              <div className="text-xs text-slate-400">{text.edit}</div>
+              <div className="text-xl font-semibold text-slate-900 dark:text-slate-100">
+                {row.title || text.project}
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setEditingBoardRowId(null)}
+              className="rounded-lg px-3 py-1.5 text-sm text-slate-500 transition hover:bg-slate-100 dark:hover:bg-slate-900"
+            >
+              {text.close}
+            </button>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            <label className="space-y-1">
+              <span className="text-xs text-slate-400">{text.project}</span>
+              {renderSelectCell(row, "title", "projects")}
+            </label>
+            <label className="space-y-1">
+              <span className="text-xs text-slate-400">{text.category}</span>
+              {renderSelectCell(row, "category", "categories")}
+            </label>
+            <label className="space-y-1">
+              <span className="text-xs text-slate-400">{text.status}</span>
+              <select
+                value={row.status}
+                onChange={(event) =>
+                  updateProjectRow(
+                    block.id,
+                    row.id,
+                    { status: event.target.value as ProjectStatus },
+                    docId,
+                  )
+                }
+                className="w-full rounded-md border border-slate-200 bg-white px-2 py-2 text-sm text-slate-900 outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+              >
+                {statusOptions.map((statusOption) => (
+                  <option key={statusOption.value} value={statusOption.value}>
+                    {statusOption.label[lang]}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="space-y-1">
+              <span className="text-xs text-slate-400">{text.deadline}</span>
+              {renderDateCell(row)}
+            </label>
+            <label className="space-y-1">
+              <span className="text-xs text-slate-400">{text.owner}</span>
+              <input
+                value={row.owner}
+                onChange={(event) =>
+                  updateProjectRow(block.id, row.id, { owner: event.target.value }, docId)
+                }
+                placeholder={text.owner}
+                className="w-full rounded-md border border-slate-200 bg-white px-2 py-2 text-sm text-slate-900 outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+              />
+            </label>
+            <label className="space-y-1 md:col-span-2">
+              <span className="text-xs text-slate-400">{text.notes}</span>
+              <textarea
+                value={row.notes}
+                onChange={(event) =>
+                  updateProjectRow(block.id, row.id, { notes: event.target.value }, docId)
+                }
+                placeholder={text.notes}
+                className="min-h-28 w-full resize-y rounded-md border border-slate-200 bg-white px-2 py-2 text-sm text-slate-900 outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+              />
+            </label>
+          </div>
+
+          <div className="mt-5 flex items-center justify-between">
+            <span
+              className={`rounded-full px-2 py-1 text-xs ${getCountdownTone(
+                row.deadline,
+              )}`}
+            >
+              {getCountdownLabel(row.deadline)}
+            </span>
+            <button
+              type="button"
+              onClick={() => {
+                deleteProjectRow(block.id, row.id, docId);
+                setEditingBoardRowId(null);
+              }}
+              className="inline-flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-red-500 transition hover:bg-red-50 dark:hover:bg-red-950"
+            >
+              <Trash2 size={14} />
+              {text.delete}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div
       className={
@@ -942,6 +991,7 @@ export const ProjectDatabase = ({
 
       {(database?.view ?? "table") === "board" && isPage ? renderBoard() : renderTable()}
       {(database?.view ?? "table") !== "board" && renderMobileCards()}
+      {renderBoardEditModal()}
     </div>
   );
 };

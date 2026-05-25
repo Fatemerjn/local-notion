@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Copy, Download, Lock, MoreHorizontal, Plus, Star, Upload } from "lucide-react";
 import { toast } from "react-hot-toast";
 import {
@@ -43,6 +43,7 @@ export const Editor: React.FC<Props> = ({ lang }) => {
   const documents = useDocuments();
   const workspaces = useWorkspaces();
   const importInputRef = useRef<HTMLInputElement>(null);
+  const pageMenuRef = useRef<HTMLDivElement>(null);
   const [pendingFocusId, setPendingFocusId] = useState<string | null>(null);
   const [showPageMenu, setShowPageMenu] = useState(false);
   const {
@@ -60,6 +61,24 @@ export const Editor: React.FC<Props> = ({ lang }) => {
       },
     }),
   );
+
+  useEffect(() => {
+    if (!showPageMenu) {
+      return;
+    }
+
+    const handlePointerDown = (event: PointerEvent) => {
+      if (
+        pageMenuRef.current &&
+        !pageMenuRef.current.contains(event.target as Node)
+      ) {
+        setShowPageMenu(false);
+      }
+    };
+
+    document.addEventListener("pointerdown", handlePointerDown);
+    return () => document.removeEventListener("pointerdown", handlePointerDown);
+  }, [showPageMenu]);
 
   if (!activeDocument) {
     return (
@@ -283,7 +302,7 @@ export const Editor: React.FC<Props> = ({ lang }) => {
                   fill={activeDocument.favorite ? "currentColor" : "none"}
                 />
               </button>
-              <div className="relative">
+              <div ref={pageMenuRef} className="relative">
                 <button
                   type="button"
                   onClick={() => setShowPageMenu((current) => !current)}
