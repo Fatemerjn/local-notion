@@ -1,12 +1,31 @@
 import { useState, useEffect } from "react";
+import { LandingAuth } from "@/components/auth/LandingAuth";
 import { Editor } from "@/components/editor";
 import { Sidebar } from "@/components/layout";
 import { matchesShortcut } from "@/lib/shortcuts";
 import { useWorkspaceActions } from "@/store/selectors";
-import { Menu } from "lucide-react";
+import { LogOut, Menu } from "lucide-react";
 import { Toaster, toast } from "react-hot-toast";
 
 function App() {
+  const [session, setSession] = useState<{
+    identifier: string;
+    loginMethod: "password" | "otp" | "google";
+  } | null>(() => {
+    const raw = localStorage.getItem("local-notion-session");
+    if (!raw) {
+      return null;
+    }
+
+    try {
+      return JSON.parse(raw) as {
+        identifier: string;
+        loginMethod: "password" | "otp" | "google";
+      };
+    } catch {
+      return null;
+    }
+  });
   const [lang, setLang] = useState<"en" | "fa">(() => {
     return (localStorage.getItem("lang") as "en" | "fa") || "fa"; // پیش‌فرض فارسی
   });
@@ -19,6 +38,10 @@ function App() {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (!session) {
+        return;
+      }
+
       if (
         matchesShortcut(e, "KeyN", { altKey: true }) ||
         matchesShortcut(e, "KeyN", { altKey: true, ctrlOrMeta: true })
@@ -37,7 +60,7 @@ function App() {
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [createDocument]);
+  }, [createDocument, session]);
 
   useEffect(() => {
     localStorage.setItem("lang", lang);
@@ -45,6 +68,33 @@ function App() {
     document.documentElement.classList.toggle("dark", dark);
     localStorage.setItem("theme", dark ? "dark" : "light");
   }, [lang, dark]);
+
+  const handleLogin = (user: {
+    identifier: string;
+    loginMethod: "password" | "otp" | "google";
+  }) => {
+    localStorage.setItem("local-notion-session", JSON.stringify(user));
+    setSession(user);
+    toast.success(lang === "fa" ? "وارد شدی" : "Signed in");
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("local-notion-session");
+    setSession(null);
+  };
+
+  if (!session) {
+    return (
+      <>
+        <Toaster position="bottom-right" />
+        <LandingAuth
+          lang={lang}
+          onLangToggle={() => setLang((l) => (l === "en" ? "fa" : "en"))}
+          onLogin={handleLogin}
+        />
+      </>
+    );
+  }
 
   return (
     <div
@@ -76,6 +126,14 @@ function App() {
         }`}
       />
       <Editor lang={lang} />
+      <button
+        type="button"
+        onClick={handleLogout}
+        className="fixed bottom-5 left-5 z-50 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/90 px-4 py-3 text-sm font-medium text-slate-600 shadow-lg backdrop-blur transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900/90 dark:text-slate-200 dark:hover:bg-slate-800"
+      >
+        <LogOut size={16} />
+        {session.identifier}
+      </button>
       <button
         onClick={() => setDark(!dark)}
         className="fixed bottom-5 right-5 bg-slate-200 dark:bg-slate-800 p-3 rounded-full shadow-lg z-50 text-xl"
