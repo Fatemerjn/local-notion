@@ -3,6 +3,14 @@
 @tailwind utilities;
 
 @layer base {
+  html,
+  body,
+  #root {
+    min-height: 100%;
+    width: 100%;
+    overflow-x: hidden;
+  }
+
   :root {
     --background: 0 0% 100%;
     --foreground: 240 10% 3.9%;
@@ -15,5 +23,83 @@
 @layer components {
   .notion-editor {
     font-family: "Inter", system-ui, sans-serif;
+  }
+
+  .landing-shell {
+    font-family:
+      "Vazirmatn",
+      "Estedad",
+      "Dana",
+      "IRANSansX",
+      ui-sans-serif,
+      system-ui,
+      sans-serif;
+    font-feature-settings:
+      "ss01" 1,
+      "kern" 1;
+  }
+
+  .landing-display {
+    font-family:
+      "Estedad",
+      "Vazirmatn",
+      "Dana",
+      ui-sans-serif,
+      system-ui,
+      sans-serif;
+    text-wrap: balance;
+  }
+
+  .landing-rise {
+    animation: landing-rise 720ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .landing-rise-delay {
+    animation-delay: 160ms;
+  }
+
+  .landing-float {
+    animation: landing-float 5.5s ease-in-out infinite;
+  }
+
+  .landing-orb {
+    animation: landing-orb 10s ease-in-out infinite alternate;
+  }
+
+  .landing-orb-delay {
+    animation-delay: -3s;
+  }
+}
+
+@keyframes landing-rise {
+  from {
+    opacity: 0;
+    transform: translateY(28px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes landing-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes landing-orb {
+  from {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+
+  to {
+    transform: translate3d(7%, 4%, 0) scale(1.08);
   }
 }

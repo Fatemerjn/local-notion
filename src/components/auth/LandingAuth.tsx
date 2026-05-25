@@ -158,21 +158,21 @@ export const LandingAuth = ({ lang, onLangToggle, onLogin }: LandingAuthProps) =
   };
 
   return (
-    <div className="landing-shell min-h-dvh w-full overflow-x-hidden bg-[#07130f] text-white">
-      <div className="pointer-events-none fixed inset-0">
-        <div className="landing-orb absolute left-[-10%] top-[-20%] h-[34rem] w-[34rem] rounded-full bg-emerald-500/25 blur-3xl" />
-        <div className="landing-orb landing-orb-delay absolute bottom-[-15%] right-[-8%] h-[30rem] w-[30rem] rounded-full bg-amber-400/20 blur-3xl" />
+    <div className="landing-shell min-h-dvh w-full max-w-[100vw] overflow-x-hidden bg-[#07130f] text-white">
+      <div className="pointer-events-none fixed inset-0 max-w-[100vw] overflow-hidden">
+        <div className="landing-orb absolute left-[-22rem] top-[-12rem] h-[30rem] w-[30rem] rounded-full bg-emerald-500/25 blur-3xl sm:left-[-10%] sm:h-[34rem] sm:w-[34rem]" />
+        <div className="landing-orb landing-orb-delay absolute bottom-[-14rem] right-[-18rem] h-[28rem] w-[28rem] rounded-full bg-amber-400/20 blur-3xl sm:right-[-8%] sm:h-[30rem] sm:w-[30rem]" />
         <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.055)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.055)_1px,transparent_1px)] bg-[size:72px_72px]" />
       </div>
 
-      <div className="relative mx-auto flex min-h-dvh w-full max-w-7xl flex-col px-4 py-5 sm:px-8">
-        <header className="flex items-center justify-between">
+      <div className="relative mx-auto flex min-h-dvh w-full max-w-none flex-col px-4 py-5 sm:px-8 lg:max-w-7xl">
+        <header className="flex w-full min-w-0 items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <div className="grid h-11 w-11 place-items-center rounded-2xl bg-white text-slate-950 shadow-[0_0_50px_rgba(16,185,129,0.35)]">
               <Sparkles size={22} />
             </div>
             <div>
-              <div className="text-lg font-black tracking-tight">{t.brand}</div>
+              <div className="whitespace-nowrap text-lg font-black tracking-tight">{t.brand}</div>
               <div className="text-xs text-emerald-100/65">{t.trusted}</div>
             </div>
           </div>
@@ -186,8 +186,8 @@ export const LandingAuth = ({ lang, onLangToggle, onLogin }: LandingAuthProps) =
           </button>
         </header>
 
-        <main className="grid min-w-0 flex-1 items-center gap-10 py-10 lg:grid-cols-[minmax(0,1fr)_minmax(500px,0.82fr)] lg:py-14 xl:grid-cols-[minmax(0,1fr)_minmax(560px,0.78fr)]">
-          <section className="landing-rise min-w-0">
+        <main className="grid w-full min-w-0 flex-1 items-center gap-10 py-10 lg:grid-cols-[minmax(0,1fr)_minmax(500px,0.82fr)] lg:py-14 xl:grid-cols-[minmax(0,1fr)_minmax(560px,0.78fr)]">
+          <section className="landing-rise w-full min-w-0">
             <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-emerald-300/20 bg-emerald-300/10 px-4 py-2 text-sm font-semibold text-emerald-100">
               <Globe2 size={16} />
               {t.eyebrow}
@@ -217,18 +217,18 @@ export const LandingAuth = ({ lang, onLangToggle, onLogin }: LandingAuthProps) =
               </button>
             </div>
 
-            <div className="mt-10 grid max-w-2xl grid-cols-3 gap-3">
+            <div className="mt-10 grid w-full max-w-2xl grid-cols-3 gap-2 sm:gap-3">
               {t.stats.map(([value, label]) => (
-                <div key={label} className="rounded-3xl border border-white/10 bg-white/[0.06] p-4 backdrop-blur">
-                  <div className="text-2xl font-black">{value}</div>
+                <div key={label} className="rounded-2xl border border-white/10 bg-white/[0.06] p-3 backdrop-blur sm:rounded-3xl sm:p-4">
+                  <div className="text-xl font-black sm:text-2xl">{value}</div>
                   <div className="mt-1 text-xs text-slate-300">{label}</div>
                 </div>
               ))}
             </div>
           </section>
 
-          <section className="landing-rise landing-rise-delay min-w-0 space-y-5">
-            <div className="order-2 grid gap-3 sm:grid-cols-3">
+          <section className="landing-rise landing-rise-delay w-full min-w-0 space-y-5">
+            <div className="order-2 grid w-full gap-3 sm:grid-cols-3">
               {t.cards.map((item, index) => (
                 <div
                   key={item}
@@ -253,7 +253,7 @@ export const LandingAuth = ({ lang, onLangToggle, onLogin }: LandingAuthProps) =
 
             <div
               id="login"
-              className="order-1 w-full rounded-[2rem] border border-white/12 bg-[#f8f4e8] p-3 text-slate-950 shadow-[0_30px_120px_rgba(0,0,0,0.45)] sm:p-4"
+              className="order-1 w-full max-w-full rounded-[2rem] border border-white/12 bg-[#f8f4e8] p-3 text-slate-950 shadow-[0_30px_120px_rgba(0,0,0,0.45)] sm:p-4"
             >
               <div className="rounded-[1.5rem] border border-slate-200 bg-white p-4 shadow-sm">
                 <div
@@ -277,10 +277,10 @@ export const LandingAuth = ({ lang, onLangToggle, onLogin }: LandingAuthProps) =
                   </div>
                   <div className="space-y-2 p-3">
                     {heroRows.map(([project, status, date]) => (
-                      <div key={project} className="grid grid-cols-[1fr_auto_auto] gap-2 rounded-xl bg-slate-50 p-3 text-sm">
+                      <div key={project} className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] gap-2 rounded-xl bg-slate-50 p-3 text-sm sm:grid-cols-[1fr_auto_auto]">
                         <span className="font-semibold">{project}</span>
                         <span className="rounded-full bg-amber-100 px-2 text-center text-amber-800">{status}</span>
-                        <span className="text-slate-500">{date}</span>
+                        <span className="col-span-2 text-slate-500 sm:col-span-1">{date}</span>
                       </div>
                     ))}
                   </div>
@@ -338,7 +338,7 @@ export const LandingAuth = ({ lang, onLangToggle, onLogin }: LandingAuthProps) =
                       />
                     </label>
                   ) : (
-                    <div className="grid grid-cols-[1fr_auto] gap-2">
+                    <div className="grid gap-2 sm:grid-cols-[1fr_auto]">
                       <label className="block">
                         <span className="text-xs font-semibold text-slate-500">
                           {t.otp}
@@ -354,7 +354,7 @@ export const LandingAuth = ({ lang, onLangToggle, onLogin }: LandingAuthProps) =
                       <button
                         type="button"
                         onClick={handleSendOtp}
-                        className="mt-5 h-12 rounded-2xl border border-slate-200 px-4 text-sm font-bold transition hover:bg-slate-50"
+                        className="h-12 rounded-2xl border border-slate-200 px-4 text-sm font-bold transition hover:bg-slate-50 sm:mt-5"
                       >
                         {t.sendOtp}
                       </button>

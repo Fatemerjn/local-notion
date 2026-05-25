@@ -1,31 +1,20 @@
 import { useState, useEffect } from "react";
-import { LandingAuth } from "@/components/auth/LandingAuth";
+import { LandingAuth } from "@/components/auth";
 import { Editor } from "@/components/editor";
 import { Sidebar } from "@/components/layout";
 import { matchesShortcut } from "@/lib/shortcuts";
+import {
+  clearSession,
+  loadSession,
+  saveSession,
+  type AuthSession,
+} from "@/lib/session";
 import { useWorkspaceActions } from "@/store/selectors";
 import { LogOut, Menu } from "lucide-react";
 import { Toaster, toast } from "react-hot-toast";
 
 function App() {
-  const [session, setSession] = useState<{
-    identifier: string;
-    loginMethod: "password" | "otp" | "google";
-  } | null>(() => {
-    const raw = localStorage.getItem("local-notion-session");
-    if (!raw) {
-      return null;
-    }
-
-    try {
-      return JSON.parse(raw) as {
-        identifier: string;
-        loginMethod: "password" | "otp" | "google";
-      };
-    } catch {
-      return null;
-    }
-  });
+  const [session, setSession] = useState<AuthSession | null>(() => loadSession());
   const [lang, setLang] = useState<"en" | "fa">(() => {
     return (localStorage.getItem("lang") as "en" | "fa") || "fa"; // پیش‌فرض فارسی
   });
@@ -69,17 +58,14 @@ function App() {
     localStorage.setItem("theme", dark ? "dark" : "light");
   }, [lang, dark]);
 
-  const handleLogin = (user: {
-    identifier: string;
-    loginMethod: "password" | "otp" | "google";
-  }) => {
-    localStorage.setItem("local-notion-session", JSON.stringify(user));
+  const handleLogin = (user: AuthSession) => {
+    saveSession(user);
     setSession(user);
     toast.success(lang === "fa" ? "وارد شدی" : "Signed in");
   };
 
   const handleLogout = () => {
-    localStorage.removeItem("local-notion-session");
+    clearSession();
     setSession(null);
   };
 
