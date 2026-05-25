@@ -1,12 +1,18 @@
 import type {
   Block,
   BlockType,
+  DatabaseSelectOption,
   Document,
   ProjectRow,
   PersistedWorkspaceState,
   Workspace,
 } from "@/types";
-import { createNewBlock, createProjectRow } from "@/utils/blockUtils";
+import {
+  createNewBlock,
+  createProjectRow,
+  DEFAULT_DATABASE_COLUMNS,
+  DEFAULT_DATABASE_OPTIONS,
+} from "@/utils/blockUtils";
 
 export const STORAGE_KEY = "local-notion-workspace-v2";
 export const DEFAULT_TITLE = "صفحه بدون عنوان";
@@ -60,6 +66,14 @@ const normalizeProjectRow = (value: unknown): ProjectRow => {
         ? row.id
         : crypto.randomUUID(),
     title: typeof row?.title === "string" ? row.title : "",
+    category: typeof row?.category === "string" ? row.category : "",
+    priority:
+      row?.priority === "low" ||
+      row?.priority === "high" ||
+      row?.priority === "urgent" ||
+      row?.priority === "medium"
+        ? row.priority
+        : "medium",
     status:
       row?.status === "in-progress" ||
       row?.status === "done" ||
@@ -79,6 +93,75 @@ const normalizeBlock = (value: unknown): Block => {
   const block = value as Partial<Block> | undefined;
   const type = normalizeBlockType(block?.type);
   const database = block?.properties?.database;
+  const normalizedProjects = Array.isArray(database?.projects)
+    ? database.projects.map((row) => normalizeProjectRow(row))
+    : [createProjectRow("New project")];
+  const optionSource = database as
+    | {
+        options?: {
+          projects?: unknown[];
+          categories?: unknown[];
+        };
+      }
+    | undefined;
+  const normalizeOption = (
+    value: unknown,
+    fallbackColor: "blue" | "green" | "amber" | "purple",
+  ): DatabaseSelectOption | null => {
+    const option = value as { id?: unknown; name?: unknown; color?: unknown };
+    const validColors = ["slate", "blue", "green", "amber", "purple", "rose", "orange"];
+    const name = typeof option?.name === "string" ? option.name.trim() : "";
+
+    if (!name) {
+      return null;
+    }
+
+    return {
+      id:
+        typeof option?.id === "string" && option.id.length > 0
+          ? option.id
+          : crypto.randomUUID(),
+      name,
+      color: validColors.includes(option?.color as string)
+        ? (option.color as "slate" | "blue" | "green" | "amber" | "purple" | "rose" | "orange")
+        : fallbackColor,
+    };
+  };
+  const isOption = (
+    option: DatabaseSelectOption | null,
+  ): option is DatabaseSelectOption => Boolean(option);
+  const projectOptions = [
+    ...DEFAULT_DATABASE_OPTIONS.projects,
+    ...(optionSource?.options?.projects ?? [])
+      .map((option) => normalizeOption(option, "blue"))
+      .filter(isOption),
+    ...normalizedProjects
+      .filter((row) => row.title.trim())
+      .map((row) => ({
+        id: `project-${row.id}`,
+        name: row.title,
+        color: "blue" as const,
+      })),
+  ].filter(
+    (option, index, allOptions) =>
+      allOptions.findIndex((item) => item.name === option.name) === index,
+  );
+  const categoryOptions = [
+    ...DEFAULT_DATABASE_OPTIONS.categories,
+    ...(optionSource?.options?.categories ?? [])
+      .map((option) => normalizeOption(option, "amber"))
+      .filter(isOption),
+    ...normalizedProjects
+      .filter((row) => row.category.trim())
+      .map((row) => ({
+        id: `category-${row.id}`,
+        name: row.category,
+        color: "amber" as const,
+      })),
+  ].filter(
+    (option, index, allOptions) =>
+      allOptions.findIndex((item) => item.name === option.name) === index,
+  );
 
   return {
     id:
@@ -95,10 +178,16 @@ const normalizeBlock = (value: unknown): Block => {
       type === "database"
         ? {
             database: {
-              view: "table",
-              projects: Array.isArray(database?.projects)
-                ? database.projects.map((row) => normalizeProjectRow(row))
-                : [createProjectRow("New project")],
+              view: database?.view === "board" ? "board" : "table",
+              columns: {
+                ...DEFAULT_DATABASE_COLUMNS,
+                ...database?.columns,
+              },
+              options: {
+                projects: projectOptions,
+                categories: categoryOptions,
+              },
+              projects: normalizedProjects,
             },
           }
         : undefined,
@@ -153,6 +242,15 @@ export const normalizeDocument = (
         )
         .map((block) => normalizeBlock(block))
     : [];
+  const hasDatabaseBlock = blocks.some((block) => block.type === "database");
+  const inferredDatabasePage =
+    document?.layout === "database" ||
+    (hasDatabaseBlock &&
+      typeof document?.title === "string" &&
+      document.title.toLowerCase() === "projects");
+  const normalizedBlocks = inferredDatabasePage
+    ? blocks.filter((block) => block.type === "database")
+    : blocks;
 
   return {
     id:
@@ -172,7 +270,11 @@ export const normalizeDocument = (
     cover:
       typeof document?.cover === "string" ? document.cover : DEFAULT_COVER,
     deadline: typeof document?.deadline === "string" ? document.deadline : "",
-    blocks: blocks.length > 0 ? blocks : [createNewBlock("text")],
+    layout: inferredDatabasePage ? "database" : "page",
+    blocks:
+      normalizedBlocks.length > 0
+        ? normalizedBlocks
+        : [createNewBlock(inferredDatabasePage ? "database" : "text", "Projects")],
     createdAt: toDate(document?.createdAt),
     updatedAt: toDate(document?.updatedAt),
   };
@@ -188,6 +290,7 @@ const createWelcomeDocument = (workspaceId: string): Document => {
     title: "Local Notion",
     icon: "🇮🇷",
     cover: "linear-gradient(135deg, #f7efe2 0%, #fdf8f2 42%, #e9dcc9 100%)",
+    layout: "page",
     createdAt,
     updatedAt: createdAt,
     blocks: [
@@ -213,6 +316,7 @@ const createQuickGuideDocument = (workspaceId: string): Document => {
     title: "Quick Guide",
     icon: "⚡️",
     cover: "linear-gradient(135deg, #ece7db 0%, #f8f6f1 50%, #ded6c8 100%)",
+    layout: "page",
     createdAt,
     updatedAt: createdAt,
     blocks: [
@@ -236,6 +340,7 @@ export const createBlankDocument = (title = DEFAULT_TITLE): Document => {
     title,
     icon: "📄",
     cover: "linear-gradient(135deg, #f4ede2 0%, #fbf7f1 55%, #e8dece 100%)",
+    layout: "page",
     blocks: [createNewBlock("text")],
     createdAt,
     updatedAt: createdAt,
@@ -316,7 +421,18 @@ export const cloneBlock = (block: Block): Block => ({
   properties: block.properties?.database
     ? {
         database: {
-          view: "table",
+          view: block.properties.database.view,
+          columns: block.properties.database.columns,
+          options: {
+            projects: block.properties.database.options.projects.map((option) => ({
+              ...option,
+              id: crypto.randomUUID(),
+            })),
+            categories: block.properties.database.options.categories.map((option) => ({
+              ...option,
+              id: crypto.randomUUID(),
+            })),
+          },
           projects: block.properties.database.projects.map((row) => ({
             ...row,
             id: crypto.randomUUID(),

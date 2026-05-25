@@ -4,6 +4,7 @@ export const translations = {
   fa: {
     untitled: "بدون عنوان",
     newDocButton: "صفحه جدید",
+    databasePageButton: "صفحه دیتابیس",
     searchDocs: "جستجو در صفحات...",
     noDocs: "هنوز صفحه‌ای ساخته نشده",
     pageIconLabel: "آیکن صفحه",
@@ -24,6 +25,7 @@ export const translations = {
   en: {
     untitled: "Untitled",
     newDocButton: "New Page",
+    databasePageButton: "Database page",
     searchDocs: "Search pages...",
     noDocs: "No pages yet",
     pageIconLabel: "Page icon",

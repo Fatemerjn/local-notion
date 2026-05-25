@@ -1,5 +1,5 @@
 import React, { useRef, useState } from "react";
-import { Copy, Download, Plus, Upload } from "lucide-react";
+import { Copy, Download, Lock, MoreHorizontal, Plus, Star, Upload } from "lucide-react";
 import { toast } from "react-hot-toast";
 import {
   DndContext,
@@ -31,6 +31,7 @@ import {
 } from "@/store/documentStore.utils";
 import type { BlockType } from "@/types";
 import Block from "./Block";
+import { ProjectDatabase } from "./ProjectDatabase";
 
 interface Props {
   lang: "fa" | "en";
@@ -194,16 +195,124 @@ export const Editor: React.FC<Props> = ({ lang }) => {
     breadcrumbs.unshift(parent);
     parentId = parent.parentId ?? null;
   }
+  const databaseBlock = activeDocument.blocks.find(
+    (block) => block.type === "database",
+  );
+  const isDatabasePage =
+    Boolean(databaseBlock) &&
+    (activeDocument.layout === "database" ||
+      activeDocument.title.toLowerCase() === "projects" ||
+      activeDocument.title === "پروژه‌ها");
+
+  if (isDatabasePage && databaseBlock) {
+    return (
+      <div className="flex-1 overflow-auto bg-white px-3 pb-24 pt-16 text-slate-950 dark:bg-slate-950 dark:text-slate-50 sm:px-6 md:px-10 md:py-8">
+        <div className="mx-auto max-w-6xl">
+          <div className="mb-12 flex flex-wrap items-center justify-between gap-3 text-sm text-slate-500 dark:text-slate-400">
+            <div className="flex min-w-0 items-center gap-2">
+              <input
+                type="text"
+                value={activeDocument.icon ?? ""}
+                onChange={(event) =>
+                  updateDocument(activeDocument.id, {
+                    icon: event.target.value.slice(0, 2),
+                  })
+                }
+                aria-label={t.pageIconLabel}
+                className="h-8 w-8 rounded-md bg-transparent text-center text-xl outline-none transition hover:bg-slate-100 dark:hover:bg-slate-900"
+              />
+              <span className="truncate font-medium text-slate-800 dark:text-slate-100">
+                {activeDocument.title || t.untitled}
+              </span>
+              <span className="inline-flex items-center gap-1 text-slate-400">
+                <Lock size={14} />
+                Private
+              </span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="hidden text-slate-400 sm:inline">Edited now</span>
+              <button
+                type="button"
+                onClick={handleDuplicatePage}
+                className="rounded-md p-1.5 text-slate-500 transition hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-900 dark:hover:text-white"
+                title={t.duplicatePage}
+              >
+                <Copy size={17} />
+              </button>
+              <button
+                type="button"
+                onClick={handleExportPage}
+                className="rounded-md p-1.5 text-slate-500 transition hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-900 dark:hover:text-white"
+                title={t.exportPage}
+              >
+                <Download size={17} />
+              </button>
+              <button
+                type="button"
+                onClick={handleExportWorkspace}
+                className="rounded-md p-1.5 text-slate-500 transition hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-900 dark:hover:text-white"
+                title={t.exportWorkspace}
+              >
+                <Download size={17} />
+              </button>
+              <button
+                type="button"
+                onClick={() => importInputRef.current?.click()}
+                className="rounded-md p-1.5 text-slate-500 transition hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-900 dark:hover:text-white"
+                title={t.importWorkspace}
+              >
+                <Upload size={17} />
+              </button>
+              <Star size={17} className="text-slate-500 dark:text-slate-300" />
+              <MoreHorizontal size={18} className="text-slate-500 dark:text-slate-300" />
+              <input
+                ref={importInputRef}
+                type="file"
+                accept="application/json"
+                onChange={handleImportFile}
+                className="hidden"
+              />
+            </div>
+          </div>
+
+          <div className="mb-6 flex items-center gap-3">
+            <input
+              type="text"
+              value={activeDocument.icon ?? ""}
+              onChange={(event) =>
+                updateDocument(activeDocument.id, {
+                  icon: event.target.value.slice(0, 2),
+                })
+              }
+              aria-label={t.pageIconLabel}
+              className="h-14 w-14 rounded-lg bg-transparent text-center text-5xl outline-none transition hover:bg-slate-100 dark:hover:bg-slate-900"
+            />
+            <input
+              type="text"
+              value={activeDocument.title}
+              onChange={(event) =>
+                updateDocumentTitle(activeDocument.id, event.target.value)
+              }
+              placeholder={t.untitled}
+              className="min-w-0 flex-1 bg-transparent text-4xl font-bold tracking-tight text-slate-900 outline-none placeholder:text-slate-300 dark:text-slate-50 dark:placeholder:text-slate-700 sm:text-5xl"
+            />
+          </div>
+
+          <ProjectDatabase
+            block={databaseBlock}
+            docId={activeDocument.id}
+            lang={lang}
+            variant="page"
+          />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex-1 overflow-auto px-3 pb-24 pt-16 sm:px-6 md:p-8">
       <div className="mx-auto max-w-3xl">
-        <div
-          className="h-28 rounded-2xl border border-slate-200/70 bg-cover bg-center shadow-sm dark:border-slate-700/80 sm:h-36 md:h-44 md:rounded-[28px]"
-          style={{ background: activeDocument.cover }}
-        />
-
-        <div className="-mt-7 mb-6 px-2 sm:-mt-10 sm:mb-8 sm:px-4">
+        <div className="mb-6 px-2 sm:mb-8 sm:px-4">
           <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             <input
               type="text"

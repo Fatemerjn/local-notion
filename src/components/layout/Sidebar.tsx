@@ -5,6 +5,7 @@ import {
   Languages,
   Plus,
   Search,
+  Table2,
   Trash2,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
@@ -32,6 +33,9 @@ export const Sidebar = ({ lang, onLangToggle, onNavigate, className = "" }: Prop
   const workspaces = useWorkspaces();
   const activeDocId = useActiveDocId();
   const activeWorkspaceId = useActiveWorkspaceId();
+  const activeWorkspace = workspaces.find(
+    (workspace) => workspace.id === activeWorkspaceId,
+  );
   const {
     createChildDocument,
     createDocument,
@@ -39,6 +43,7 @@ export const Sidebar = ({ lang, onLangToggle, onNavigate, className = "" }: Prop
     deleteDocument,
     setActiveDocId,
     setActiveWorkspaceId,
+    updateWorkspace,
   } = useWorkspaceActions();
   const [search, setSearch] = useState("");
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
@@ -98,7 +103,11 @@ export const Sidebar = ({ lang, onLangToggle, onNavigate, className = "" }: Prop
             </button>
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
-                <FileText size={14} className="shrink-0" />
+                {document.layout === "database" ? (
+                  <Table2 size={14} className="shrink-0" />
+                ) : (
+                  <FileText size={14} className="shrink-0" />
+                )}
                 <span className="truncate text-sm font-medium">
                   {document.title || t.untitled}
                 </span>
@@ -177,6 +186,31 @@ export const Sidebar = ({ lang, onLangToggle, onNavigate, className = "" }: Prop
           </button>
         </div>
 
+        {activeWorkspace && (
+          <div className="mb-3 grid grid-cols-[auto_1fr] gap-2">
+            <input
+              value={activeWorkspace.icon}
+              onChange={(event) =>
+                updateWorkspace(activeWorkspace.id, {
+                  icon: event.target.value.slice(0, 2) || "🏠",
+                })
+              }
+              className="w-12 rounded-lg border border-slate-200 bg-white px-2 py-2 text-center text-sm outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+              aria-label="Workspace icon"
+            />
+            <input
+              value={activeWorkspace.name}
+              onChange={(event) =>
+                updateWorkspace(activeWorkspace.id, {
+                  name: event.target.value,
+                })
+              }
+              className="min-w-0 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-900 outline-none focus:border-blue-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+              aria-label="Workspace name"
+            />
+          </div>
+        )}
+
         <button
           onClick={() => {
             createDocument(t.untitled, {
@@ -188,6 +222,20 @@ export const Sidebar = ({ lang, onLangToggle, onNavigate, className = "" }: Prop
         >
           <Plus size={16} />
           {t.newDocButton}
+        </button>
+
+        <button
+          onClick={() => {
+            createDocument(lang === "fa" ? "پروژه‌ها" : "Projects", {
+              workspaceId: activeWorkspaceId ?? undefined,
+              template: "database",
+            });
+            onNavigate?.();
+          }}
+          className="mt-2 flex w-full items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white py-2 text-sm text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+        >
+          <Plus size={16} />
+          {t.databasePageButton}
         </button>
 
         <div className="relative mt-3">

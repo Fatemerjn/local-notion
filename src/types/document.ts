@@ -1,5 +1,8 @@
 import type { Block, BlockType, ProjectRow } from "./block";
 
+export type DocumentLayout = "page" | "database";
+export type DocumentTemplate = "blank" | "database";
+
 export interface Workspace {
   id: string;
   name: string;
@@ -16,6 +19,7 @@ export interface Document {
   icon?: string;
   cover?: string;
   deadline?: string;
+  layout?: DocumentLayout;
   blocks: Block[];
   createdAt: Date;
   updatedAt: Date;
@@ -40,6 +44,7 @@ export interface UpdateDocumentPayload {
   icon?: string;
   cover?: string;
   deadline?: string;
+  layout?: DocumentLayout;
   parentId?: string | null;
   workspaceId?: string;
 }
@@ -52,7 +57,11 @@ export interface DocumentStore extends PersistedWorkspaceState {
 
   createDocument: (
     title?: string,
-    options?: { workspaceId?: string; parentId?: string | null },
+    options?: {
+      workspaceId?: string;
+      parentId?: string | null;
+      template?: DocumentTemplate;
+    },
   ) => string;
   createChildDocument: (parentId: string, title?: string) => string | null;
   duplicateDocument: (id: string) => string | null;

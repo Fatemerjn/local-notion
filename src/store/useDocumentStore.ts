@@ -10,7 +10,12 @@ import type {
   UpdateDocumentPayload,
   Workspace,
 } from "@/types";
-import { createNewBlock, createProjectRow } from "@/utils/blockUtils";
+import {
+  createNewBlock,
+  createProjectRow,
+  DEFAULT_DATABASE_COLUMNS,
+  DEFAULT_DATABASE_OPTIONS,
+} from "@/utils/blockUtils";
 import {
   cloneBlock,
   createWorkspaceModel,
@@ -122,10 +127,17 @@ export const useDocumentStore = create<DocumentStore>((set, get) => ({
       return "";
     }
 
+    const isDatabaseTemplate = options?.template === "database";
+    const baseDocument = createBlankDocument(title);
     const newDocument = {
-      ...createBlankDocument(title),
+      ...baseDocument,
       workspaceId,
       parentId: options?.parentId ?? null,
+      icon: isDatabaseTemplate ? "📊" : "📄",
+      layout: isDatabaseTemplate ? ("database" as const) : ("page" as const),
+      blocks: isDatabaseTemplate
+        ? [createNewBlock("database", title)]
+        : baseDocument.blocks,
     };
 
     set((state) => {
@@ -626,7 +638,13 @@ export const useDocumentStore = create<DocumentStore>((set, get) => ({
                   ...block,
                   properties: {
                     database: {
-                      view: "table" as const,
+                      view: block.properties?.database?.view ?? "table",
+                      columns:
+                        block.properties?.database?.columns ??
+                        DEFAULT_DATABASE_COLUMNS,
+                      options:
+                        block.properties?.database?.options ??
+                        DEFAULT_DATABASE_OPTIONS,
                       projects: [
                         ...(block.properties?.database?.projects ?? []),
                         row,
@@ -676,7 +694,13 @@ export const useDocumentStore = create<DocumentStore>((set, get) => ({
                   ...block,
                   properties: {
                     database: {
-                      view: "table" as const,
+                      view: block.properties?.database?.view ?? "table",
+                      columns:
+                        block.properties?.database?.columns ??
+                        DEFAULT_DATABASE_COLUMNS,
+                      options:
+                        block.properties?.database?.options ??
+                        DEFAULT_DATABASE_OPTIONS,
                       projects: (
                         block.properties?.database?.projects ?? []
                       ).map((row) =>
@@ -721,7 +745,13 @@ export const useDocumentStore = create<DocumentStore>((set, get) => ({
                   ...block,
                   properties: {
                     database: {
-                      view: "table" as const,
+                      view: block.properties?.database?.view ?? "table",
+                      columns:
+                        block.properties?.database?.columns ??
+                        DEFAULT_DATABASE_COLUMNS,
+                      options:
+                        block.properties?.database?.options ??
+                        DEFAULT_DATABASE_OPTIONS,
                       projects: (
                         block.properties?.database?.projects ?? []
                       ).filter((row) => row.id !== rowId),

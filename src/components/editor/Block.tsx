@@ -72,6 +72,7 @@ const Block: React.FC<BlockProps> = ({
     transition,
     isDragging,
   } = useSortable({ id: block.id });
+  const blockRef = useRef<HTMLDivElement | null>(null);
   const [activeCommandIndex, setActiveCommandIndex] = useState(0);
   const [isTypeMenuOpen, setIsTypeMenuOpen] = useState(false);
   const placeholder = getBlockPlaceholder(block.type as BlockType);
@@ -123,6 +124,17 @@ const Block: React.FC<BlockProps> = ({
   useEffect(() => {
     setActiveCommandIndex(0);
   }, [slashQuery]);
+
+  useEffect(() => {
+    const handlePointerDown = (event: PointerEvent) => {
+      if (!blockRef.current?.contains(event.target as Node)) {
+        setIsTypeMenuOpen(false);
+      }
+    };
+
+    document.addEventListener("pointerdown", handlePointerDown);
+    return () => document.removeEventListener("pointerdown", handlePointerDown);
+  }, []);
 
   const getNextBlockType = (): BlockType => {
     if (block.type === "heading1" || block.type === "heading2" || block.type === "heading3") {
@@ -341,7 +353,10 @@ const Block: React.FC<BlockProps> = ({
 
   return (
     <div
-      ref={setNodeRef}
+      ref={(node) => {
+        setNodeRef(node);
+        blockRef.current = node;
+      }}
       style={{
         transform: CSS.Transform.toString(transform),
         transition,
@@ -355,7 +370,7 @@ const Block: React.FC<BlockProps> = ({
 
       <div className="min-w-0 flex-1">
         {isDatabase ? (
-          <ProjectDatabase block={block} docId={docId} />
+          <ProjectDatabase block={block} docId={docId} lang={lang} />
         ) : isDivider ? (
           <div className="flex items-center gap-3 py-3">
             <div className="h-px flex-1 bg-slate-200 dark:bg-slate-700" />

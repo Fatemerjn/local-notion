@@ -1,5 +1,36 @@
 // src/utils/blockUtils.ts
-import type { Block, BlockType, ProjectRow } from "@/types/block";
+import type {
+  Block,
+  BlockType,
+  DatabaseSelectOption,
+  ProjectRow,
+} from "@/types/block";
+
+export const DEFAULT_DATABASE_COLUMNS = {
+  title: "Project",
+  category: "Category",
+  status: "Status",
+  deadline: "Deadline",
+  countdown: "Countdown",
+  priority: "Priority",
+  owner: "Owner",
+  notes: "Notes",
+};
+
+export const DEFAULT_DATABASE_OPTIONS: {
+  projects: DatabaseSelectOption[];
+  categories: DatabaseSelectOption[];
+} = {
+  projects: [
+    { id: "project-design", name: "Design first release", color: "blue" },
+    { id: "project-deploy", name: "Deploy public domain", color: "green" },
+  ],
+  categories: [
+    { id: "category-product", name: "Product", color: "amber" },
+    { id: "category-launch", name: "Launch", color: "purple" },
+    { id: "category-research", name: "Research", color: "green" },
+  ],
+};
 
 export const createProjectRow = (title = ""): ProjectRow => {
   const now = new Date();
@@ -7,6 +38,8 @@ export const createProjectRow = (title = ""): ProjectRow => {
   return {
     id: crypto.randomUUID(),
     title,
+    category: "",
+    priority: "medium",
     status: "not-started",
     deadline: "",
     owner: "",
@@ -75,6 +108,8 @@ export const createNewBlock = (
         ? {
             database: {
               view: "table",
+              columns: DEFAULT_DATABASE_COLUMNS,
+              options: DEFAULT_DATABASE_OPTIONS,
               projects: [
                 createProjectRow("Design first release"),
                 createProjectRow("Deploy public domain"),

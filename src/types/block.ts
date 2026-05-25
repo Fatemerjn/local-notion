@@ -15,10 +15,20 @@ export type BlockType =
   | "database";
 
 export type ProjectStatus = "not-started" | "in-progress" | "done" | "blocked";
+export type ProjectPriority = "low" | "medium" | "high" | "urgent";
+export type DatabaseView = "table" | "board";
+
+export interface DatabaseSelectOption {
+  id: string;
+  name: string;
+  color: "slate" | "blue" | "green" | "amber" | "purple" | "rose" | "orange";
+}
 
 export interface ProjectRow {
   id: string;
   title: string;
+  category: string;
+  priority: ProjectPriority;
   status: ProjectStatus;
   deadline: string;
   owner: string;
@@ -28,7 +38,21 @@ export interface ProjectRow {
 }
 
 export interface DatabaseBlockProperties {
-  view: "table";
+  view: DatabaseView;
+  columns: {
+    title: string;
+    category: string;
+    status: string;
+    deadline: string;
+    countdown: string;
+    priority: string;
+    owner: string;
+    notes: string;
+  };
+  options: {
+    projects: DatabaseSelectOption[];
+    categories: DatabaseSelectOption[];
+  };
   projects: ProjectRow[];
 }
 
