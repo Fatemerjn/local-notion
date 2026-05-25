@@ -20,6 +20,7 @@ export interface Document {
   cover?: string;
   deadline?: string;
   layout?: DocumentLayout;
+  favorite?: boolean;
   blocks: Block[];
   createdAt: Date;
   updatedAt: Date;
@@ -45,6 +46,7 @@ export interface UpdateDocumentPayload {
   cover?: string;
   deadline?: string;
   layout?: DocumentLayout;
+  favorite?: boolean;
   parentId?: string | null;
   workspaceId?: string;
 }

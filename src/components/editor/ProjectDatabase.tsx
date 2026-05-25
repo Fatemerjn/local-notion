@@ -81,8 +81,12 @@ const labels = {
     search: "جستجو...",
     settings: "گزینه‌های پروژه و کتگوری",
     sort: "مرتب‌سازی ددلاین",
+    sortShort: "ددلاین",
     status: "وضعیت",
     typeToCreate: "انتخاب کن یا گزینه جدید بساز",
+    addOption: "اضافه کن",
+    edit: "ویرایش",
+    delete: "حذف",
   },
   en: {
     allTasks: "All Tasks",
@@ -101,8 +105,12 @@ const labels = {
     search: "Search...",
     settings: "Project and category options",
     sort: "Sort by deadline",
+    sortShort: "Deadline",
     status: "Status",
     typeToCreate: "Select an option or create one",
+    addOption: "Add",
+    edit: "Edit",
+    delete: "Delete",
   },
 };
 
@@ -160,6 +168,11 @@ export const ProjectDatabase = ({
   const [groupByCategory, setGroupByCategory] = useState(false);
   const [search, setSearch] = useState("");
   const [jalaliDrafts, setJalaliDrafts] = useState<Record<string, string>>({});
+  const [settingsDrafts, setSettingsDrafts] = useState({
+    projects: "",
+    categories: "",
+  });
+  const [expandedBoardRowId, setExpandedBoardRowId] = useState<string | null>(null);
 
   const updateDatabase = (updates: Partial<DatabaseBlockProperties>) => {
     updateBlock(
@@ -235,6 +248,23 @@ export const ProjectDatabase = ({
         [key]: nextOptions,
       },
     });
+  };
+
+  const handleCreateSettingsOption = (
+    key: keyof DatabaseBlockProperties["options"],
+  ) => {
+    const name = settingsDrafts[key].trim();
+    if (!name) {
+      return;
+    }
+
+    if (options[key].some((option) => option.name === name)) {
+      setSettingsDrafts((current) => ({ ...current, [key]: "" }));
+      return;
+    }
+
+    updateOptions(key, [...options[key], createOption(name, options[key].length)]);
+    setSettingsDrafts((current) => ({ ...current, [key]: "" }));
   };
 
   const handleCreateOption = (
@@ -415,6 +445,7 @@ export const ProjectDatabase = ({
           onClick={() => {
             updateView("table");
             setGroupByCategory((current) => !current);
+            setSortByDeadline(false);
           }}
           className={`inline-flex items-center gap-2 rounded-md px-3 py-2 transition ${
             groupByCategory
@@ -450,7 +481,10 @@ export const ProjectDatabase = ({
         </button>
         <button
           type="button"
-          onClick={() => setSortByDeadline((current) => !current)}
+          onClick={() => {
+            setSortByDeadline((current) => !current);
+            setGroupByCategory(false);
+          }}
           className={`rounded-md p-1.5 transition ${
             sortByDeadline
               ? "bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-200"
@@ -459,6 +493,7 @@ export const ProjectDatabase = ({
           title={text.sort}
         >
           <ArrowUpDown size={16} />
+          <span className="hidden px-1 text-xs sm:inline">{text.sortShort}</span>
         </button>
         <button
           type="button"
@@ -504,6 +539,32 @@ export const ProjectDatabase = ({
       <div>
         <div className="mb-2 text-sm font-medium text-slate-600 dark:text-slate-300">
           {title}
+        </div>
+        <div className="mb-3 flex gap-2">
+          <input
+            value={settingsDrafts[key]}
+            onChange={(event) =>
+              setSettingsDrafts((current) => ({
+                ...current,
+                [key]: event.target.value,
+              }))
+            }
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                handleCreateSettingsOption(key);
+              }
+            }}
+            placeholder={text.typeToCreate}
+            className="min-w-0 flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-blue-400 dark:border-slate-700 dark:bg-slate-950"
+          />
+          <button
+            type="button"
+            onClick={() => handleCreateSettingsOption(key)}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-slate-900 px-3 py-2 text-sm text-white transition hover:bg-slate-700 dark:bg-slate-100 dark:text-slate-900"
+          >
+            <Plus size={14} />
+            {text.addOption}
+          </button>
         </div>
         <div className="flex flex-wrap gap-2">
           {options[key].map((option) => (
@@ -670,14 +731,27 @@ export const ProjectDatabase = ({
               {statusRows.map((row) => (
                 <div
                   key={row.id}
-                  draggable
+                  draggable={expandedBoardRowId !== row.id}
                   onDragStart={(event) =>
                     event.dataTransfer.setData("text/project-row-id", row.id)
                   }
                   className="cursor-grab rounded-xl border border-slate-200 bg-white p-3 shadow-sm active:cursor-grabbing dark:border-slate-800 dark:bg-slate-950"
                 >
-                  <div className="font-medium text-slate-900 dark:text-slate-100">
-                    {row.title || text.project}
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="font-medium text-slate-900 dark:text-slate-100">
+                      {row.title || text.project}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setExpandedBoardRowId((current) =>
+                          current === row.id ? null : row.id,
+                        )
+                      }
+                      className="rounded-md px-2 py-1 text-xs text-slate-500 transition hover:bg-slate-100 dark:hover:bg-slate-800"
+                    >
+                      {text.edit}
+                    </button>
                   </div>
                   <div className="mt-2 flex flex-wrap gap-2">
                     {row.category && (
@@ -695,6 +769,71 @@ export const ProjectDatabase = ({
                       </span>
                     )}
                   </div>
+                  {expandedBoardRowId === row.id && (
+                    <div className="mt-3 space-y-3 border-t border-slate-100 pt-3 dark:border-slate-800">
+                      <div>
+                        <div className="mb-1 text-xs text-slate-400">{text.project}</div>
+                        {renderSelectCell(row, "title", "projects")}
+                      </div>
+                      <div>
+                        <div className="mb-1 text-xs text-slate-400">{text.category}</div>
+                        {renderSelectCell(row, "category", "categories")}
+                      </div>
+                      <select
+                        value={row.status}
+                        onChange={(event) =>
+                          updateProjectRow(
+                            block.id,
+                            row.id,
+                            { status: event.target.value as ProjectStatus },
+                            docId,
+                          )
+                        }
+                        className="w-full rounded-md border border-slate-200 bg-white px-2 py-2 text-sm text-slate-900 outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                      >
+                        {statusOptions.map((statusOption) => (
+                          <option key={statusOption.value} value={statusOption.value}>
+                            {statusOption.label[lang]}
+                          </option>
+                        ))}
+                      </select>
+                      {renderDateCell(row)}
+                      <input
+                        value={row.owner}
+                        onChange={(event) =>
+                          updateProjectRow(
+                            block.id,
+                            row.id,
+                            { owner: event.target.value },
+                            docId,
+                          )
+                        }
+                        placeholder={text.owner}
+                        className="w-full rounded-md border border-slate-200 bg-white px-2 py-2 text-sm text-slate-900 outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                      />
+                      <textarea
+                        value={row.notes}
+                        onChange={(event) =>
+                          updateProjectRow(
+                            block.id,
+                            row.id,
+                            { notes: event.target.value },
+                            docId,
+                          )
+                        }
+                        placeholder={text.notes}
+                        className="min-h-20 w-full resize-y rounded-md border border-slate-200 bg-white px-2 py-2 text-sm text-slate-900 outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => deleteProjectRow(block.id, row.id, docId)}
+                        className="inline-flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-red-500 transition hover:bg-red-50 dark:hover:bg-red-950"
+                      >
+                        <Trash2 size={14} />
+                        {text.delete}
+                      </button>
+                    </div>
+                  )}
                 </div>
               ))}
               <button
@@ -703,6 +842,7 @@ export const ProjectDatabase = ({
                   const newRowId = addProjectRow(block.id, docId);
                   if (newRowId) {
                     updateProjectRow(block.id, newRowId, { status: status.value }, docId);
+                    setExpandedBoardRowId(newRowId);
                   }
                 }}
                 className="flex w-full items-center gap-2 rounded-lg border border-dashed border-slate-300 px-3 py-2 text-sm text-slate-500 transition hover:bg-white dark:border-slate-700 dark:hover:bg-slate-950"

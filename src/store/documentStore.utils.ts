@@ -271,6 +271,7 @@ export const normalizeDocument = (
       typeof document?.cover === "string" ? document.cover : DEFAULT_COVER,
     deadline: typeof document?.deadline === "string" ? document.deadline : "",
     layout: inferredDatabasePage ? "database" : "page",
+    favorite: Boolean(document?.favorite),
     blocks:
       normalizedBlocks.length > 0
         ? normalizedBlocks
@@ -291,6 +292,7 @@ const createWelcomeDocument = (workspaceId: string): Document => {
     icon: "🇮🇷",
     cover: "linear-gradient(135deg, #f7efe2 0%, #fdf8f2 42%, #e9dcc9 100%)",
     layout: "page",
+    favorite: false,
     createdAt,
     updatedAt: createdAt,
     blocks: [
@@ -317,6 +319,7 @@ const createQuickGuideDocument = (workspaceId: string): Document => {
     icon: "⚡️",
     cover: "linear-gradient(135deg, #ece7db 0%, #f8f6f1 50%, #ded6c8 100%)",
     layout: "page",
+    favorite: false,
     createdAt,
     updatedAt: createdAt,
     blocks: [
@@ -341,6 +344,7 @@ export const createBlankDocument = (title = DEFAULT_TITLE): Document => {
     icon: "📄",
     cover: "linear-gradient(135deg, #f4ede2 0%, #fbf7f1 55%, #e8dece 100%)",
     layout: "page",
+    favorite: false,
     blocks: [createNewBlock("text")],
     createdAt,
     updatedAt: createdAt,

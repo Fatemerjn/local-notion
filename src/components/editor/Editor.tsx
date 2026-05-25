@@ -44,6 +44,7 @@ export const Editor: React.FC<Props> = ({ lang }) => {
   const workspaces = useWorkspaces();
   const importInputRef = useRef<HTMLInputElement>(null);
   const [pendingFocusId, setPendingFocusId] = useState<string | null>(null);
+  const [showPageMenu, setShowPageMenu] = useState(false);
   const {
     addBlock,
     duplicateDocument,
@@ -263,8 +264,72 @@ export const Editor: React.FC<Props> = ({ lang }) => {
               >
                 <Upload size={17} />
               </button>
-              <Star size={17} className="text-slate-500 dark:text-slate-300" />
-              <MoreHorizontal size={18} className="text-slate-500 dark:text-slate-300" />
+              <button
+                type="button"
+                onClick={() =>
+                  updateDocument(activeDocument.id, {
+                    favorite: !activeDocument.favorite,
+                  })
+                }
+                className={`rounded-md p-1.5 transition hover:bg-slate-100 dark:hover:bg-slate-900 ${
+                  activeDocument.favorite
+                    ? "text-amber-500"
+                    : "text-slate-500 dark:text-slate-300"
+                }`}
+                title={activeDocument.favorite ? "Remove favorite" : "Favorite"}
+              >
+                <Star
+                  size={17}
+                  fill={activeDocument.favorite ? "currentColor" : "none"}
+                />
+              </button>
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setShowPageMenu((current) => !current)}
+                  className="rounded-md p-1.5 text-slate-500 transition hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-900 dark:hover:text-white"
+                  title="More"
+                >
+                  <MoreHorizontal size={18} />
+                </button>
+                {showPageMenu && (
+                  <div className="absolute end-0 z-50 mt-2 w-52 rounded-xl border border-slate-200 bg-white p-1.5 text-sm shadow-xl dark:border-slate-700 dark:bg-slate-900">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        handleDuplicatePage();
+                        setShowPageMenu(false);
+                      }}
+                      className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-start text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
+                    >
+                      <Copy size={15} />
+                      {t.duplicatePage}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        handleExportPage();
+                        setShowPageMenu(false);
+                      }}
+                      className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-start text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
+                    >
+                      <Download size={15} />
+                      {t.exportPage}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        importInputRef.current?.click();
+                        setShowPageMenu(false);
+                      }}
+                      className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-start text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
+                    >
+                      <Upload size={15} />
+                      {t.importWorkspace}
+                    </button>
+                  </div>
+                )}
+              </div>
               <input
                 ref={importInputRef}
                 type="file"
