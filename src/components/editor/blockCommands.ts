@@ -86,4 +86,11 @@ export const BLOCK_COMMANDS: BlockCommand[] = [
     descriptionFa: "خط افقی",
     descriptionEn: "Horizontal divider",
   },
+  {
+    type: "database",
+    labelFa: "جدول پروژه",
+    labelEn: "Project table",
+    descriptionFa: "پروژه، وضعیت، ددلاین و کانت‌داون",
+    descriptionEn: "Projects, status, deadlines, countdown",
+  },
 ];

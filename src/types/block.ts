@@ -14,6 +14,28 @@ export type BlockType =
   | "page"
   | "database";
 
+export type ProjectStatus = "not-started" | "in-progress" | "done" | "blocked";
+
+export interface ProjectRow {
+  id: string;
+  title: string;
+  status: ProjectStatus;
+  deadline: string;
+  owner: string;
+  notes: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface DatabaseBlockProperties {
+  view: "table";
+  projects: ProjectRow[];
+}
+
+export interface BlockProperties {
+  database?: DatabaseBlockProperties;
+}
+
 export interface Block {
   id: string;
   type: BlockType;
@@ -22,4 +44,5 @@ export interface Block {
   updatedAt: Date;
   checked?: boolean;
   collapsed?: boolean;
+  properties?: BlockProperties;
 }

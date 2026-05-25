@@ -1,22 +1,37 @@
-import type { Block, BlockType } from "./block";
+import type { Block, BlockType, ProjectRow } from "./block";
+
+export interface Workspace {
+  id: string;
+  name: string;
+  icon: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
 
 export interface Document {
   id: string;
+  workspaceId: string;
+  parentId?: string | null;
   title: string;
   icon?: string;
   cover?: string;
+  deadline?: string;
   blocks: Block[];
   createdAt: Date;
   updatedAt: Date;
 }
 
 export interface PersistedWorkspaceState {
+  workspaces: Workspace[];
+  activeWorkspaceId: string | null;
   documents: Document[];
   activeDocId: string | null;
 }
 
 export interface ReplaceDocumentsPayload {
   documents: Document[];
+  workspaces?: Workspace[];
+  activeWorkspaceId?: string | null;
   activeDocId?: string | null;
 }
 
@@ -24,10 +39,22 @@ export interface UpdateDocumentPayload {
   title?: string;
   icon?: string;
   cover?: string;
+  deadline?: string;
+  parentId?: string | null;
+  workspaceId?: string;
 }
 
 export interface DocumentStore extends PersistedWorkspaceState {
-  createDocument: (title?: string) => string;
+  createWorkspace: (name?: string) => string;
+  updateWorkspace: (id: string, updates: Partial<Workspace>) => void;
+  deleteWorkspace: (id: string) => void;
+  setActiveWorkspaceId: (id: string) => void;
+
+  createDocument: (
+    title?: string,
+    options?: { workspaceId?: string; parentId?: string | null },
+  ) => string;
+  createChildDocument: (parentId: string, title?: string) => string | null;
   duplicateDocument: (id: string) => string | null;
   replaceDocuments: (payload: ReplaceDocumentsPayload) => void;
   setActiveDocId: (id: string) => void;
@@ -46,4 +73,12 @@ export interface DocumentStore extends PersistedWorkspaceState {
   toggleBlockChecked: (id: string, docId?: string) => void;
   toggleBlockCollapsed: (id: string, docId?: string) => void;
   duplicateBlock: (id: string, docId?: string) => string | null;
+  addProjectRow: (blockId: string, docId?: string) => string | null;
+  updateProjectRow: (
+    blockId: string,
+    rowId: string,
+    updates: Partial<ProjectRow>,
+    docId?: string,
+  ) => void;
+  deleteProjectRow: (blockId: string, rowId: string, docId?: string) => void;
 }

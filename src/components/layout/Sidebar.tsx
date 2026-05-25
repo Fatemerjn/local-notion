@@ -1,13 +1,23 @@
 import { useState } from "react";
-import { FileText, Languages, Plus, Search, Trash2 } from "lucide-react";
+import {
+  ChevronRight,
+  FileText,
+  Languages,
+  Plus,
+  Search,
+  Trash2,
+} from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { enUS, faIR } from "date-fns/locale";
 import { translations } from "@/i18n/translations";
 import {
   useActiveDocId,
+  useActiveWorkspaceId,
   useDocuments,
+  useWorkspaces,
   useWorkspaceActions,
 } from "@/store/selectors";
+import type { Document } from "@/types";
 
 interface Props {
   lang: "en" | "fa";
@@ -19,13 +29,115 @@ interface Props {
 export const Sidebar = ({ lang, onLangToggle, onNavigate, className = "" }: Props) => {
   const t = translations[lang];
   const documents = useDocuments();
+  const workspaces = useWorkspaces();
   const activeDocId = useActiveDocId();
-  const { createDocument, deleteDocument, setActiveDocId } = useWorkspaceActions();
+  const activeWorkspaceId = useActiveWorkspaceId();
+  const {
+    createChildDocument,
+    createDocument,
+    createWorkspace,
+    deleteDocument,
+    setActiveDocId,
+    setActiveWorkspaceId,
+  } = useWorkspaceActions();
   const [search, setSearch] = useState("");
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
-  const filteredDocs = documents.filter((document) =>
+  const activeWorkspaceDocuments = documents.filter(
+    (document) => document.workspaceId === activeWorkspaceId,
+  );
+  const filteredDocs = activeWorkspaceDocuments.filter((document) =>
     document.title.toLowerCase().includes(search.toLowerCase()),
   );
+  const visibleDocs = search ? filteredDocs : activeWorkspaceDocuments;
+  const childMap = visibleDocs.reduce<Record<string, Document[]>>(
+    (accumulator, document) => {
+      const key = document.parentId ?? "root";
+      accumulator[key] = [...(accumulator[key] ?? []), document];
+      return accumulator;
+    },
+    {},
+  );
+
+  const renderDocument = (document: Document, depth = 0) => {
+    const children = childMap[document.id] ?? [];
+    const isExpanded = search ? true : expanded[document.id] ?? true;
+
+    return (
+      <div key={document.id}>
+        <div
+          onClick={() => {
+            setActiveDocId(document.id);
+            onNavigate?.();
+          }}
+          className={`group flex cursor-pointer items-center justify-between rounded-lg py-2 pl-2 pr-3 transition ${
+            document.id === activeDocId
+              ? "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-200"
+              : "hover:bg-slate-100 dark:hover:bg-slate-800"
+          }`}
+          style={{ marginInlineStart: depth * 12 }}
+        >
+          <div className="flex min-w-0 flex-1 items-start gap-1">
+            <button
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation();
+                setExpanded((current) => ({
+                  ...current,
+                  [document.id]: !isExpanded,
+                }));
+              }}
+              className={`mt-0.5 rounded p-0.5 text-slate-400 transition ${
+                children.length === 0 ? "opacity-0" : "hover:bg-slate-200"
+              }`}
+            >
+              <ChevronRight
+                size={14}
+                className={`transition ${isExpanded ? "rotate-90" : ""}`}
+              />
+            </button>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2">
+                <FileText size={14} className="shrink-0" />
+                <span className="truncate text-sm font-medium">
+                  {document.title || t.untitled}
+                </span>
+              </div>
+              <span className="ms-6 text-xs text-slate-400">
+                {formatDistanceToNow(document.updatedAt, {
+                  addSuffix: true,
+                  locale: lang === "fa" ? faIR : enUS,
+                })}
+              </span>
+            </div>
+          </div>
+          <div className="flex opacity-0 transition group-hover:opacity-100">
+            <button
+              onClick={(event) => {
+                event.stopPropagation();
+                createChildDocument(document.id, t.untitled);
+                setExpanded((current) => ({ ...current, [document.id]: true }));
+                onNavigate?.();
+              }}
+              className="rounded p-1 text-slate-400 hover:bg-slate-200 hover:text-slate-700 dark:hover:bg-slate-700"
+            >
+              <Plus size={14} />
+            </button>
+            <button
+              onClick={(event) => {
+                event.stopPropagation();
+                deleteDocument(document.id);
+              }}
+              className="rounded p-1 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/40"
+            >
+              <Trash2 size={14} />
+            </button>
+          </div>
+        </div>
+        {isExpanded && children.map((child) => renderDocument(child, depth + 1))}
+      </div>
+    );
+  };
 
   return (
     <aside
@@ -44,9 +156,32 @@ export const Sidebar = ({ lang, onLangToggle, onNavigate, className = "" }: Prop
           </button>
         </div>
 
+        <div className="mb-3 grid grid-cols-[1fr_auto] gap-2">
+          <select
+            value={activeWorkspaceId ?? ""}
+            onChange={(event) => setActiveWorkspaceId(event.target.value)}
+            className="min-w-0 rounded-lg border border-slate-200 bg-white px-2 py-2 text-sm outline-none dark:border-slate-700 dark:bg-slate-800"
+          >
+            {workspaces.map((workspace) => (
+              <option key={workspace.id} value={workspace.id}>
+                {workspace.icon} {workspace.name}
+              </option>
+            ))}
+          </select>
+          <button
+            type="button"
+            onClick={() => createWorkspace("New workspace")}
+            className="rounded-lg border border-slate-200 bg-white p-2 text-slate-600 transition hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800"
+          >
+            <Plus size={16} />
+          </button>
+        </div>
+
         <button
           onClick={() => {
-            createDocument(t.untitled);
+            createDocument(t.untitled, {
+              workspaceId: activeWorkspaceId ?? undefined,
+            });
             onNavigate?.();
           }}
           className="flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 py-2 text-white transition hover:bg-blue-700"
@@ -71,49 +206,12 @@ export const Sidebar = ({ lang, onLangToggle, onNavigate, className = "" }: Prop
       </div>
 
       <div className="flex-1 space-y-1 overflow-y-auto p-2">
-        {filteredDocs.length === 0 ? (
+        {visibleDocs.length === 0 ? (
           <div className="py-8 text-center text-sm text-slate-400">
             {t.noDocs}
           </div>
         ) : (
-          filteredDocs.map((document) => (
-            <div
-              key={document.id}
-              onClick={() => {
-                setActiveDocId(document.id);
-                onNavigate?.();
-              }}
-              className={`group flex cursor-pointer items-center justify-between rounded-lg px-3 py-2 transition ${
-                document.id === activeDocId
-                  ? "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-200"
-                  : "hover:bg-slate-100 dark:hover:bg-slate-800"
-              }`}
-            >
-              <div className="min-w-0 flex flex-col">
-                <div className="flex items-center gap-2">
-                  <FileText size={14} className="shrink-0" />
-                  <span className="truncate text-sm font-medium">
-                    {document.title || t.untitled}
-                  </span>
-                </div>
-                <span className="ml-6 text-xs text-slate-400">
-                  {formatDistanceToNow(document.updatedAt, {
-                    addSuffix: true,
-                    locale: lang === "fa" ? faIR : enUS,
-                  })}
-                </span>
-              </div>
-              <button
-                onClick={(event) => {
-                  event.stopPropagation();
-                  deleteDocument(document.id);
-                }}
-                className="rounded p-1 text-red-500 opacity-0 transition hover:bg-red-100 dark:hover:bg-red-900/40 group-hover:opacity-100"
-              >
-                <Trash2 size={14} />
-              </button>
-            </div>
-          ))
+          (childMap.root ?? []).map((document) => renderDocument(document))
         )}
       </div>
 

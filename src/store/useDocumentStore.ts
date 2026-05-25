@@ -4,38 +4,153 @@ import type {
   BlockType,
   Document,
   DocumentStore,
+  PersistedWorkspaceState,
+  ProjectRow,
   ReplaceDocumentsPayload,
   UpdateDocumentPayload,
+  Workspace,
 } from "@/types";
-import { createNewBlock } from "@/utils/blockUtils";
+import { createNewBlock, createProjectRow } from "@/utils/blockUtils";
 import {
   cloneBlock,
+  createWorkspaceModel,
   createBlankDocument,
   DEFAULT_TITLE,
   ensureDocuments,
   loadWorkspace,
   normalizeDocument,
+  normalizeWorkspace,
   persistWorkspace,
 } from "./documentStore.utils";
 
 const initialWorkspace = loadWorkspace();
 
+const createNextState = (
+  state: PersistedWorkspaceState,
+  updates: Partial<PersistedWorkspaceState>,
+): PersistedWorkspaceState => ({
+  workspaces: updates.workspaces ?? state.workspaces,
+  activeWorkspaceId: updates.activeWorkspaceId ?? state.activeWorkspaceId,
+  documents: updates.documents ?? state.documents,
+  activeDocId:
+    updates.activeDocId === undefined ? state.activeDocId : updates.activeDocId,
+});
+
 export const useDocumentStore = create<DocumentStore>((set, get) => ({
   ...initialWorkspace,
 
-  createDocument: (title = DEFAULT_TITLE) => {
-    const newDocument = createBlankDocument(title);
+  createWorkspace: (name = "Workspace") => {
+    const workspace = createWorkspaceModel(name);
+    const home = {
+      ...createBlankDocument("Home"),
+      workspaceId: workspace.id,
+      icon: "🏠",
+    };
 
     set((state) => {
-      const nextState = {
+      const nextState = createNextState(state, {
+        workspaces: [...state.workspaces, workspace],
+        activeWorkspaceId: workspace.id,
+        documents: [home, ...state.documents],
+        activeDocId: home.id,
+      });
+      persistWorkspace(nextState);
+      return nextState;
+    });
+
+    return workspace.id;
+  },
+
+  updateWorkspace: (id: string, updates: Partial<Workspace>) =>
+    set((state) => {
+      const nextState = createNextState(state, {
+        workspaces: state.workspaces.map((workspace) =>
+          workspace.id === id
+            ? { ...workspace, ...updates, updatedAt: new Date() }
+            : workspace,
+        ),
+      });
+      persistWorkspace(nextState);
+      return nextState;
+    }),
+
+  deleteWorkspace: (id: string) =>
+    set((state) => {
+      if (state.workspaces.length <= 1) {
+        return {};
+      }
+
+      const workspaces = state.workspaces.filter((workspace) => workspace.id !== id);
+      const documents = state.documents.filter((document) => document.workspaceId !== id);
+      const activeWorkspaceId =
+        state.activeWorkspaceId === id ? workspaces[0].id : state.activeWorkspaceId;
+      const activeDocId = documents.some((document) => document.id === state.activeDocId)
+        ? state.activeDocId
+        : documents.find((document) => document.workspaceId === activeWorkspaceId)?.id ??
+          documents[0]?.id ??
+          null;
+      const nextState = createNextState(state, {
+        workspaces,
+        activeWorkspaceId,
+        documents,
+        activeDocId,
+      });
+      persistWorkspace(nextState);
+      return nextState;
+    }),
+
+  setActiveWorkspaceId: (id: string) =>
+    set((state) => {
+      if (!state.workspaces.some((workspace) => workspace.id === id)) {
+        return {};
+      }
+
+      const activeDocId =
+        state.documents.find((document) => document.workspaceId === id)?.id ?? null;
+      const nextState = createNextState(state, {
+        activeWorkspaceId: id,
+        activeDocId,
+      });
+      persistWorkspace(nextState);
+      return nextState;
+    }),
+
+  createDocument: (title = DEFAULT_TITLE, options) => {
+    const workspaceId =
+      options?.workspaceId ?? get().activeWorkspaceId ?? get().workspaces[0]?.id;
+    if (!workspaceId) {
+      return "";
+    }
+
+    const newDocument = {
+      ...createBlankDocument(title),
+      workspaceId,
+      parentId: options?.parentId ?? null,
+    };
+
+    set((state) => {
+      const nextState = createNextState(state, {
         documents: [newDocument, ...state.documents],
         activeDocId: newDocument.id,
-      };
+        activeWorkspaceId: workspaceId,
+      });
       persistWorkspace(nextState);
       return nextState;
     });
 
     return newDocument.id;
+  },
+
+  createChildDocument: (parentId: string, title = DEFAULT_TITLE) => {
+    const parent = get().documents.find((document) => document.id === parentId);
+    if (!parent) {
+      return null;
+    }
+
+    return get().createDocument(title, {
+      workspaceId: parent.workspaceId,
+      parentId,
+    });
   },
 
   duplicateDocument: (id: string) => {
@@ -58,10 +173,11 @@ export const useDocumentStore = create<DocumentStore>((set, get) => ({
       const sourceIndex = state.documents.findIndex((document) => document.id === id);
       const documents = [...state.documents];
       documents.splice(sourceIndex + 1, 0, duplicate);
-      const nextState = {
+      const nextState = createNextState(state, {
         documents,
         activeDocId: duplicate.id,
-      };
+        activeWorkspaceId: duplicate.workspaceId,
+      });
       persistWorkspace(nextState);
       return nextState;
     });
@@ -70,14 +186,29 @@ export const useDocumentStore = create<DocumentStore>((set, get) => ({
   },
 
   replaceDocuments: (payload: ReplaceDocumentsPayload) => {
+    const fallbackWorkspace = get().workspaces[0] ?? createWorkspaceModel();
+    const workspaces = payload.workspaces
+      ? payload.workspaces.map((workspace) => normalizeWorkspace(workspace))
+      : get().workspaces.length > 0
+        ? get().workspaces
+        : [fallbackWorkspace];
+    const activeWorkspaceId = workspaces.some(
+      (workspace) => workspace.id === payload.activeWorkspaceId,
+    )
+      ? payload.activeWorkspaceId ?? workspaces[0].id
+      : workspaces[0].id;
     const documents = ensureDocuments(
-      payload.documents.map((document) => normalizeDocument(document)),
+      payload.documents.map((document) =>
+        normalizeDocument(document, activeWorkspaceId),
+      ),
     );
     const activeDocId = documents.some((document) => document.id === payload.activeDocId)
       ? payload.activeDocId ?? documents[0].id
       : documents[0].id;
 
     const nextState = {
+      workspaces,
+      activeWorkspaceId,
       documents,
       activeDocId,
     };
@@ -92,10 +223,13 @@ export const useDocumentStore = create<DocumentStore>((set, get) => ({
         return {};
       }
 
-      const nextState = {
+      const nextState = createNextState(state, {
         documents: state.documents,
         activeDocId: id,
-      };
+        activeWorkspaceId:
+          state.documents.find((document) => document.id === id)?.workspaceId ??
+          state.activeWorkspaceId,
+      });
       persistWorkspace(nextState);
       return nextState;
     }),
@@ -111,10 +245,10 @@ export const useDocumentStore = create<DocumentStore>((set, get) => ({
             }
           : document,
       );
-      const nextState = {
+      const nextState = createNextState(state, {
         documents,
         activeDocId: state.activeDocId,
-      };
+      });
       persistWorkspace(nextState);
       return nextState;
     }),
@@ -126,28 +260,48 @@ export const useDocumentStore = create<DocumentStore>((set, get) => ({
           ? { ...document, title, updatedAt: new Date() }
           : document,
       );
-      const nextState = {
+      const nextState = createNextState(state, {
         documents,
         activeDocId: state.activeDocId,
-      };
+      });
       persistWorkspace(nextState);
       return nextState;
     }),
 
   deleteDocument: (id: string) =>
     set((state) => {
-      const remainingDocuments = ensureDocuments(
-        state.documents.filter((document) => document.id !== id),
+      const idsToDelete = new Set([id]);
+      let changed = true;
+      while (changed) {
+        changed = false;
+        state.documents.forEach((document) => {
+          if (document.parentId && idsToDelete.has(document.parentId)) {
+            changed = !idsToDelete.has(document.id) || changed;
+            idsToDelete.add(document.id);
+          }
+        });
+      }
+      const filteredDocuments = state.documents.filter(
+        (document) => !idsToDelete.has(document.id),
       );
+      const remainingDocuments =
+        filteredDocuments.length > 0
+          ? filteredDocuments
+          : [
+              {
+                ...createBlankDocument(),
+                workspaceId: state.activeWorkspaceId ?? state.workspaces[0].id,
+              },
+            ];
       const activeDocId = remainingDocuments.some(
         (document) => document.id === state.activeDocId,
       )
         ? state.activeDocId
         : remainingDocuments[0].id;
-      const nextState = {
+      const nextState = createNextState(state, {
         documents: remainingDocuments,
         activeDocId,
-      };
+      });
       persistWorkspace(nextState);
       return nextState;
     }),
@@ -180,10 +334,10 @@ export const useDocumentStore = create<DocumentStore>((set, get) => ({
         };
       });
 
-      const nextState = {
+      const nextState = createNextState(state, {
         documents,
         activeDocId: state.activeDocId,
-      };
+      });
       persistWorkspace(nextState);
       return nextState;
     });
@@ -218,10 +372,10 @@ export const useDocumentStore = create<DocumentStore>((set, get) => ({
         };
       });
 
-      const nextState = {
+      const nextState = createNextState(state, {
         documents,
         activeDocId: state.activeDocId,
-      };
+      });
       persistWorkspace(nextState);
       return nextState;
     }),
@@ -247,10 +401,10 @@ export const useDocumentStore = create<DocumentStore>((set, get) => ({
         };
       });
 
-      const nextState = {
+      const nextState = createNextState(state, {
         documents,
         activeDocId: state.activeDocId,
-      };
+      });
       persistWorkspace(nextState);
       return nextState;
     }),
@@ -287,10 +441,10 @@ export const useDocumentStore = create<DocumentStore>((set, get) => ({
         };
       });
 
-      const nextState = {
+      const nextState = createNextState(state, {
         documents,
         activeDocId: state.activeDocId,
-      };
+      });
       persistWorkspace(nextState);
       return nextState;
     }),
@@ -314,22 +468,28 @@ export const useDocumentStore = create<DocumentStore>((set, get) => ({
               ? {
                   ...block,
                   type,
-                  checked: type === "todo" ? block.checked ?? false : undefined,
-                  collapsed:
-                    type === "toggle" ? block.collapsed ?? false : undefined,
-                  content: type === "divider" ? "" : block.content,
-                  updatedAt: new Date(),
-                }
-              : block,
+                checked: type === "todo" ? block.checked ?? false : undefined,
+                collapsed:
+                  type === "toggle" ? block.collapsed ?? false : undefined,
+                content: type === "divider" ? "" : block.content,
+                properties:
+                  type === "database"
+                    ? block.properties?.database
+                      ? block.properties
+                      : createNewBlock("database").properties
+                    : undefined,
+                updatedAt: new Date(),
+              }
+            : block,
           ),
           updatedAt: new Date(),
         };
       });
 
-      const nextState = {
+      const nextState = createNextState(state, {
         documents,
         activeDocId: state.activeDocId,
-      };
+      });
       persistWorkspace(nextState);
       return nextState;
     }),
@@ -361,10 +521,10 @@ export const useDocumentStore = create<DocumentStore>((set, get) => ({
         };
       });
 
-      const nextState = {
+      const nextState = createNextState(state, {
         documents,
         activeDocId: state.activeDocId,
-      };
+      });
       persistWorkspace(nextState);
       return nextState;
     }),
@@ -396,10 +556,10 @@ export const useDocumentStore = create<DocumentStore>((set, get) => ({
         };
       });
 
-      const nextState = {
+      const nextState = createNextState(state, {
         documents,
         activeDocId: state.activeDocId,
-      };
+      });
       persistWorkspace(nextState);
       return nextState;
     }),
@@ -433,14 +593,152 @@ export const useDocumentStore = create<DocumentStore>((set, get) => ({
         };
       });
 
-      const nextState = {
+      const nextState = createNextState(currentState, {
         documents,
         activeDocId: currentState.activeDocId,
-      };
+      });
       persistWorkspace(nextState);
       return nextState;
     });
 
     return duplicate.id;
   },
+
+  addProjectRow: (blockId: string, docId?: string) => {
+    const targetDocId = docId ?? get().activeDocId;
+    if (!targetDocId) {
+      return null;
+    }
+
+    const row = createProjectRow("New project");
+
+    set((state) => {
+      const documents = state.documents.map((document) => {
+        if (document.id !== targetDocId) {
+          return document;
+        }
+
+        return {
+          ...document,
+          blocks: document.blocks.map((block) =>
+            block.id === blockId && block.type === "database"
+              ? {
+                  ...block,
+                  properties: {
+                    database: {
+                      view: "table" as const,
+                      projects: [
+                        ...(block.properties?.database?.projects ?? []),
+                        row,
+                      ],
+                    },
+                  },
+                  updatedAt: new Date(),
+                }
+              : block,
+          ),
+          updatedAt: new Date(),
+        };
+      });
+      const nextState = createNextState(state, {
+        documents,
+        activeDocId: state.activeDocId,
+      });
+      persistWorkspace(nextState);
+      return nextState;
+    });
+
+    return row.id;
+  },
+
+  updateProjectRow: (
+    blockId: string,
+    rowId: string,
+    updates: Partial<ProjectRow>,
+    docId?: string,
+  ) =>
+    set((state) => {
+      const targetDocId = docId ?? state.activeDocId;
+      if (!targetDocId) {
+        return {};
+      }
+
+      const documents = state.documents.map((document) => {
+        if (document.id !== targetDocId) {
+          return document;
+        }
+
+        return {
+          ...document,
+          blocks: document.blocks.map((block) =>
+            block.id === blockId && block.type === "database"
+              ? {
+                  ...block,
+                  properties: {
+                    database: {
+                      view: "table" as const,
+                      projects: (
+                        block.properties?.database?.projects ?? []
+                      ).map((row) =>
+                        row.id === rowId
+                          ? { ...row, ...updates, updatedAt: new Date() }
+                          : row,
+                      ),
+                    },
+                  },
+                  updatedAt: new Date(),
+                }
+              : block,
+          ),
+          updatedAt: new Date(),
+        };
+      });
+      const nextState = createNextState(state, {
+        documents,
+        activeDocId: state.activeDocId,
+      });
+      persistWorkspace(nextState);
+      return nextState;
+    }),
+
+  deleteProjectRow: (blockId: string, rowId: string, docId?: string) =>
+    set((state) => {
+      const targetDocId = docId ?? state.activeDocId;
+      if (!targetDocId) {
+        return {};
+      }
+
+      const documents = state.documents.map((document) => {
+        if (document.id !== targetDocId) {
+          return document;
+        }
+
+        return {
+          ...document,
+          blocks: document.blocks.map((block) =>
+            block.id === blockId && block.type === "database"
+              ? {
+                  ...block,
+                  properties: {
+                    database: {
+                      view: "table" as const,
+                      projects: (
+                        block.properties?.database?.projects ?? []
+                      ).filter((row) => row.id !== rowId),
+                    },
+                  },
+                  updatedAt: new Date(),
+                }
+              : block,
+          ),
+          updatedAt: new Date(),
+        };
+      });
+      const nextState = createNextState(state, {
+        documents,
+        activeDocId: state.activeDocId,
+      });
+      persistWorkspace(nextState);
+      return nextState;
+    }),
 }));

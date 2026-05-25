@@ -11,6 +11,7 @@ import type { Block as BlockModel, BlockType } from "@/types";
 import { useWorkspaceActions } from "@/store/selectors";
 import { getBlockPlaceholder } from "@/utils/blockUtils";
 import { BLOCK_COMMANDS } from "./blockCommands";
+import { ProjectDatabase } from "./ProjectDatabase";
 
 interface BlockProps {
   block: BlockModel;
@@ -69,6 +70,7 @@ const Block: React.FC<BlockProps> = ({
   const isCode = block.type === "code";
   const isToggle = block.type === "toggle";
   const isDivider = block.type === "divider";
+  const isDatabase = block.type === "database";
   const trimmedContent = block.content.trimStart();
   const slashMatch = trimmedContent.match(/^[/\\](.*)$/);
   const slashQuery = slashMatch
@@ -86,6 +88,7 @@ const Block: React.FC<BlockProps> = ({
   });
   const isCommandMenuOpen =
     !isDivider &&
+    !isDatabase &&
     (isTypeMenuOpen || Boolean(slashMatch)) &&
     filteredCommands.length > 0;
 
@@ -316,10 +319,12 @@ const Block: React.FC<BlockProps> = ({
   return (
     <div className="group relative flex rounded-xl px-2 py-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-800/70">
       {renderHandle()}
-      <div className="w-8 flex-shrink-0">{renderLeading()}</div>
+      <div className="w-8 flex-shrink-0">{isDatabase ? null : renderLeading()}</div>
 
       <div className="min-w-0 flex-1">
-        {isDivider ? (
+        {isDatabase ? (
+          <ProjectDatabase block={block} docId={docId} />
+        ) : isDivider ? (
           <div className="flex items-center gap-3 py-3">
             <div className="h-px flex-1 bg-slate-200 dark:bg-slate-700" />
           </div>

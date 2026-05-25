@@ -1,5 +1,20 @@
 // src/utils/blockUtils.ts
-import type { Block, BlockType } from "@/types/block";
+import type { Block, BlockType, ProjectRow } from "@/types/block";
+
+export const createProjectRow = (title = ""): ProjectRow => {
+  const now = new Date();
+
+  return {
+    id: crypto.randomUUID(),
+    title,
+    status: "not-started",
+    deadline: "",
+    owner: "",
+    notes: "",
+    createdAt: now,
+    updatedAt: now,
+  };
+};
 
 export const getBlockPlaceholder = (
   type: BlockType,
@@ -20,7 +35,7 @@ export const getBlockPlaceholder = (
       image: "تصویر",
       divider: "",
       page: "صفحه جدید",
-      database: "دیتابیس",
+      database: "جدول پروژه‌ها",
     },
     en: {
       text: "Type something...",
@@ -36,7 +51,7 @@ export const getBlockPlaceholder = (
       image: "Image",
       divider: "",
       page: "New page",
-      database: "Database",
+      database: "Project table",
     },
   };
 
@@ -55,5 +70,17 @@ export const createNewBlock = (
     updatedAt: new Date(),
     checked: type === "todo" ? false : undefined,
     collapsed: type === "toggle" ? false : undefined,
+    properties:
+      type === "database"
+        ? {
+            database: {
+              view: "table",
+              projects: [
+                createProjectRow("Design first release"),
+                createProjectRow("Deploy public domain"),
+              ],
+            },
+          }
+        : undefined,
   };
 };

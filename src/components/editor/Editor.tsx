@@ -10,13 +10,16 @@ import {
 import {
   useActiveDocument,
   useDocuments,
+  useWorkspaces,
   useWorkspaceActions,
 } from "@/store/selectors";
 import {
   cloneDocumentForImport,
+  normalizeWorkspace,
   normalizeDocument,
 } from "@/store/documentStore.utils";
 import Block from "./Block";
+import { getCountdownLabel, getCountdownTone } from "@/lib/deadlines";
 
 interface Props {
   lang: "fa" | "en";
@@ -26,6 +29,7 @@ export const Editor: React.FC<Props> = ({ lang }) => {
   const t = translations[lang];
   const activeDocument = useActiveDocument();
   const documents = useDocuments();
+  const workspaces = useWorkspaces();
   const importInputRef = useRef<HTMLInputElement>(null);
   const [pendingFocusId, setPendingFocusId] = useState<string | null>(null);
   const {
@@ -73,6 +77,8 @@ export const Editor: React.FC<Props> = ({ lang }) => {
       version: 1,
       exportedAt: new Date().toISOString(),
       workspace: {
+        workspaces,
+        activeWorkspaceId: activeDocument.workspaceId,
         documents,
         activeDocId: activeDocument.id,
       },
@@ -95,7 +101,9 @@ export const Editor: React.FC<Props> = ({ lang }) => {
             document?: unknown;
             documents?: unknown[];
             workspace?: {
+              workspaces?: unknown[];
               documents?: unknown[];
+              activeWorkspaceId?: string | null;
               activeDocId?: string | null;
             };
           }
@@ -114,11 +122,21 @@ export const Editor: React.FC<Props> = ({ lang }) => {
       }
 
       const normalizedDocuments = incomingDocuments.map((document) =>
-        cloneDocumentForImport(normalizeDocument(document)),
+        cloneDocumentForImport(
+          normalizeDocument(document, activeDocument.workspaceId),
+        ),
       );
+      const normalizedWorkspaces = Array.isArray(parsed?.workspace?.workspaces)
+        ? parsed.workspace.workspaces.map((workspace) =>
+            normalizeWorkspace(workspace),
+          )
+        : workspaces;
 
       replaceDocuments({
+        workspaces: normalizedWorkspaces,
         documents: [...normalizedDocuments, ...documents],
+        activeWorkspaceId:
+          normalizedDocuments[0]?.workspaceId ?? activeDocument.workspaceId,
         activeDocId: normalizedDocuments[0]?.id,
       });
       toast.success(t.workspaceImported);
@@ -128,6 +146,17 @@ export const Editor: React.FC<Props> = ({ lang }) => {
       event.target.value = "";
     }
   };
+
+  const breadcrumbs = [];
+  let parentId = activeDocument.parentId;
+  while (parentId) {
+    const parent = documents.find((document) => document.id === parentId);
+    if (!parent) {
+      break;
+    }
+    breadcrumbs.unshift(parent);
+    parentId = parent.parentId ?? null;
+  }
 
   return (
     <div className="flex-1 overflow-auto px-3 pb-24 pt-16 sm:px-6 md:p-8">
@@ -197,6 +226,15 @@ export const Editor: React.FC<Props> = ({ lang }) => {
         </div>
 
         <div className="mb-6 px-2 sm:mb-8 sm:px-4">
+          {breadcrumbs.length > 0 && (
+            <div className="mb-3 flex flex-wrap items-center gap-2 text-sm text-slate-400">
+              {breadcrumbs.map((document) => (
+                <span key={document.id} className="rounded-md bg-slate-100 px-2 py-1 dark:bg-slate-800">
+                  {document.title || t.untitled}
+                </span>
+              ))}
+            </div>
+          )}
           <input
             type="text"
             value={activeDocument.title}
@@ -206,6 +244,25 @@ export const Editor: React.FC<Props> = ({ lang }) => {
             placeholder={t.untitled}
             className="w-full bg-transparent text-3xl font-bold outline-none placeholder:text-slate-300 sm:text-4xl"
           />
+          <div className="mt-4 flex flex-wrap items-center gap-3">
+            <input
+              type="date"
+              value={activeDocument.deadline ?? ""}
+              onChange={(event) =>
+                updateDocument(activeDocument.id, {
+                  deadline: event.target.value,
+                })
+              }
+              className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none dark:border-slate-700 dark:bg-slate-900"
+            />
+            <span
+              className={`rounded-full px-3 py-1.5 text-xs ${getCountdownTone(
+                activeDocument.deadline,
+              )}`}
+            >
+              {getCountdownLabel(activeDocument.deadline)}
+            </span>
+          </div>
         </div>
 
         <div className="space-y-1">
