@@ -1,6 +1,17 @@
 import React, { useRef, useState } from "react";
 import { Copy, Download, Plus, Upload } from "lucide-react";
 import { toast } from "react-hot-toast";
+import {
+  DndContext,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
 import { translations } from "@/i18n/translations";
 import {
   createPageExportName,
@@ -18,8 +29,8 @@ import {
   normalizeWorkspace,
   normalizeDocument,
 } from "@/store/documentStore.utils";
+import type { BlockType } from "@/types";
 import Block from "./Block";
-import { getCountdownLabel, getCountdownTone } from "@/lib/deadlines";
 
 interface Props {
   lang: "fa" | "en";
@@ -36,9 +47,17 @@ export const Editor: React.FC<Props> = ({ lang }) => {
     addBlock,
     duplicateDocument,
     replaceDocuments,
-    updateDocument,
     updateDocumentTitle,
+    moveBlock,
+    updateDocument,
   } = useWorkspaceActions();
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 6,
+      },
+    }),
+  );
 
   if (!activeDocument) {
     return (
@@ -48,14 +67,32 @@ export const Editor: React.FC<Props> = ({ lang }) => {
     );
   }
 
-  const handleCreateBlock = (afterBlockId?: string) => {
-    const newBlockId = addBlock("text", {
+  const handleCreateBlock = (afterBlockId?: string, type: BlockType = "text") => {
+    const newBlockId = addBlock(type, {
       docId: activeDocument.id,
       afterBlockId,
     });
 
     if (newBlockId) {
       setPendingFocusId(newBlockId);
+    }
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) {
+      return;
+    }
+
+    const fromIndex = activeDocument.blocks.findIndex(
+      (block) => block.id === active.id,
+    );
+    const toIndex = activeDocument.blocks.findIndex(
+      (block) => block.id === over.id,
+    );
+
+    if (fromIndex >= 0 && toIndex >= 0) {
+      moveBlock(fromIndex, toIndex, activeDocument.id);
     }
   };
 
@@ -242,59 +279,57 @@ export const Editor: React.FC<Props> = ({ lang }) => {
               updateDocumentTitle(activeDocument.id, event.target.value)
             }
             placeholder={t.untitled}
-            className="w-full bg-transparent text-3xl font-bold outline-none placeholder:text-slate-300 sm:text-4xl"
+            className="w-full bg-transparent text-3xl font-bold text-slate-950 outline-none placeholder:text-slate-300 dark:text-slate-50 dark:placeholder:text-slate-600 sm:text-4xl"
           />
-          <div className="mt-4 flex flex-wrap items-center gap-3">
-            <input
-              type="date"
-              value={activeDocument.deadline ?? ""}
-              onChange={(event) =>
-                updateDocument(activeDocument.id, {
-                  deadline: event.target.value,
-                })
-              }
-              className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none dark:border-slate-700 dark:bg-slate-900"
-            />
-            <span
-              className={`rounded-full px-3 py-1.5 text-xs ${getCountdownTone(
-                activeDocument.deadline,
-              )}`}
-            >
-              {getCountdownLabel(activeDocument.deadline)}
-            </span>
-          </div>
         </div>
 
-        <div className="space-y-1">
-          {activeDocument.blocks.length === 0 ? (
-            <div className="py-20 text-center text-slate-400">
-              <p className="text-lg">هیچ بلاکی وجود ندارد</p>
-              <button
-                onClick={() => handleCreateBlock()}
-                className="mx-auto mt-6 flex items-center gap-2 rounded-xl bg-black px-6 py-3 text-white transition hover:bg-zinc-800"
-              >
-                <Plus size={18} />
-                اولین بلاک را بساز
-              </button>
+        <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
+          <SortableContext
+            items={activeDocument.blocks.map((block) => block.id)}
+            strategy={verticalListSortingStrategy}
+          >
+            <div className="space-y-1 text-slate-950 dark:text-slate-50">
+              {activeDocument.blocks.length === 0 ? (
+                <div className="py-20 text-center text-slate-400">
+                  <p className="text-lg">هیچ بلاکی وجود ندارد</p>
+                  <button
+                    onClick={() => handleCreateBlock()}
+                    className="mx-auto mt-6 flex items-center gap-2 rounded-xl bg-black px-6 py-3 text-white transition hover:bg-zinc-800"
+                  >
+                    <Plus size={18} />
+                    اولین بلاک را بساز
+                  </button>
+                </div>
+              ) : (
+                activeDocument.blocks.map((block, index) => (
+                  <Block
+                    key={block.id}
+                    block={block}
+                    docId={activeDocument.id}
+                    lang={lang}
+                    index={index}
+                    numberedListIndex={
+                      block.type === "numbered-list"
+                        ? activeDocument.blocks
+                            .slice(0, index + 1)
+                            .filter((item) => item.type === "numbered-list")
+                            .length
+                        : null
+                    }
+                    totalBlocks={activeDocument.blocks.length}
+                    previousBlockId={
+                      activeDocument.blocks[index - 1]?.id ?? null
+                    }
+                    nextBlockId={activeDocument.blocks[index + 1]?.id ?? null}
+                    shouldFocus={pendingFocusId === block.id}
+                    onFocusHandled={() => setPendingFocusId(null)}
+                    onRequestFocus={(blockId) => setPendingFocusId(blockId)}
+                  />
+                ))
+              )}
             </div>
-          ) : (
-            activeDocument.blocks.map((block, index) => (
-              <Block
-                key={block.id}
-                block={block}
-                docId={activeDocument.id}
-                lang={lang}
-                index={index}
-                totalBlocks={activeDocument.blocks.length}
-                previousBlockId={activeDocument.blocks[index - 1]?.id ?? null}
-                nextBlockId={activeDocument.blocks[index + 1]?.id ?? null}
-                shouldFocus={pendingFocusId === block.id}
-                onFocusHandled={() => setPendingFocusId(null)}
-                onRequestFocus={(blockId) => setPendingFocusId(blockId)}
-              />
-            ))
-          )}
-        </div>
+          </SortableContext>
+        </DndContext>
 
         {activeDocument.blocks.length > 0 && (
           <button

@@ -39,7 +39,7 @@ export const ProjectDatabase = ({ block, docId }: ProjectDatabaseProps) => {
         </button>
       </div>
 
-      <div className="hidden min-w-full overflow-x-auto md:block">
+      <div className="hidden min-w-full overflow-x-auto text-slate-900 dark:text-slate-100 md:block">
         <table className="w-full text-sm">
           <thead className="bg-slate-50 text-xs uppercase text-slate-400 dark:bg-slate-800/80">
             <tr>
@@ -69,7 +69,7 @@ export const ProjectDatabase = ({ block, docId }: ProjectDatabaseProps) => {
                         docId,
                       )
                     }
-                    className="w-full bg-transparent outline-none"
+                    className="w-full bg-transparent text-slate-900 outline-none placeholder:text-slate-400 dark:text-slate-100 dark:placeholder:text-slate-500"
                     placeholder="Project name"
                   />
                 </td>
@@ -84,7 +84,7 @@ export const ProjectDatabase = ({ block, docId }: ProjectDatabaseProps) => {
                         docId,
                       )
                     }
-                    className="rounded-md border border-slate-200 bg-white px-2 py-1 outline-none dark:border-slate-700 dark:bg-slate-900"
+                    className="rounded-md border border-slate-200 bg-white px-2 py-1 text-slate-900 outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
                   >
                     {statuses.map((status) => (
                       <option key={status.value} value={status.value}>
@@ -105,7 +105,7 @@ export const ProjectDatabase = ({ block, docId }: ProjectDatabaseProps) => {
                         docId,
                       )
                     }
-                    className="rounded-md border border-slate-200 bg-white px-2 py-1 outline-none dark:border-slate-700 dark:bg-slate-900"
+                    className="rounded-md border border-slate-200 bg-white px-2 py-1 text-slate-900 outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
                   />
                 </td>
                 <td className="px-3 py-2">
@@ -128,7 +128,7 @@ export const ProjectDatabase = ({ block, docId }: ProjectDatabaseProps) => {
                         docId,
                       )
                     }
-                    className="w-28 bg-transparent outline-none"
+                    className="w-28 bg-transparent text-slate-900 outline-none placeholder:text-slate-400 dark:text-slate-100 dark:placeholder:text-slate-500"
                     placeholder="Owner"
                   />
                 </td>
@@ -143,7 +143,7 @@ export const ProjectDatabase = ({ block, docId }: ProjectDatabaseProps) => {
                         docId,
                       )
                     }
-                    className="w-full bg-transparent outline-none"
+                    className="w-full bg-transparent text-slate-900 outline-none placeholder:text-slate-400 dark:text-slate-100 dark:placeholder:text-slate-500"
                     placeholder="Notes"
                   />
                 </td>
@@ -166,7 +166,7 @@ export const ProjectDatabase = ({ block, docId }: ProjectDatabaseProps) => {
         {rows.map((row) => (
           <div
             key={row.id}
-            className="rounded-lg border border-slate-200 p-3 dark:border-slate-700"
+            className="rounded-lg border border-slate-200 p-3 text-slate-900 dark:border-slate-700 dark:text-slate-100"
           >
             <input
               value={row.title}
@@ -178,7 +178,7 @@ export const ProjectDatabase = ({ block, docId }: ProjectDatabaseProps) => {
                   docId,
                 )
               }
-              className="w-full bg-transparent font-medium outline-none"
+              className="w-full bg-transparent font-medium outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500"
               placeholder="Project name"
             />
             <div className="mt-3 grid grid-cols-2 gap-2">
@@ -192,7 +192,7 @@ export const ProjectDatabase = ({ block, docId }: ProjectDatabaseProps) => {
                     docId,
                   )
                 }
-                className="rounded-md border border-slate-200 bg-white px-2 py-2 text-sm outline-none dark:border-slate-700 dark:bg-slate-900"
+                className="rounded-md border border-slate-200 bg-white px-2 py-2 text-sm text-slate-900 outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
               >
                 {statuses.map((status) => (
                   <option key={status.value} value={status.value}>
@@ -211,7 +211,7 @@ export const ProjectDatabase = ({ block, docId }: ProjectDatabaseProps) => {
                     docId,
                   )
                 }
-                className="rounded-md border border-slate-200 bg-white px-2 py-2 text-sm outline-none dark:border-slate-700 dark:bg-slate-900"
+                className="rounded-md border border-slate-200 bg-white px-2 py-2 text-sm text-slate-900 outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
               />
             </div>
             <div className="mt-3 flex items-center justify-between gap-2">

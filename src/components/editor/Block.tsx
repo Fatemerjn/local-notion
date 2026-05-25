@@ -7,6 +7,8 @@ import {
   Trash2,
 } from "lucide-react";
 import TextareaAutosize from "react-textarea-autosize";
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import type { Block as BlockModel, BlockType } from "@/types";
 import { useWorkspaceActions } from "@/store/selectors";
 import { getBlockPlaceholder } from "@/utils/blockUtils";
@@ -18,6 +20,7 @@ interface BlockProps {
   docId: string;
   lang: "fa" | "en";
   index: number;
+  numberedListIndex: number | null;
   totalBlocks: number;
   previousBlockId: string | null;
   nextBlockId: string | null;
@@ -44,6 +47,7 @@ const Block: React.FC<BlockProps> = ({
   docId,
   lang,
   index,
+  numberedListIndex,
   totalBlocks,
   previousBlockId,
   nextBlockId,
@@ -55,12 +59,19 @@ const Block: React.FC<BlockProps> = ({
     addBlock,
     deleteBlock,
     duplicateBlock,
-    moveBlock,
     setBlockType,
     toggleBlockCollapsed,
     updateBlock,
   } = useWorkspaceActions();
   const inputRef = useRef<HTMLInputElement | HTMLTextAreaElement>(null);
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: block.id });
   const [activeCommandIndex, setActiveCommandIndex] = useState(0);
   const [isTypeMenuOpen, setIsTypeMenuOpen] = useState(false);
   const placeholder = getBlockPlaceholder(block.type as BlockType);
@@ -113,7 +124,19 @@ const Block: React.FC<BlockProps> = ({
     setActiveCommandIndex(0);
   }, [slashQuery]);
 
-  const createBlockBelow = (type: BlockType = "text") => {
+  const getNextBlockType = (): BlockType => {
+    if (block.type === "heading1" || block.type === "heading2" || block.type === "heading3") {
+      return "text";
+    }
+
+    if (block.type === "divider" || block.type === "database") {
+      return "text";
+    }
+
+    return block.type;
+  };
+
+  const createBlockBelow = (type: BlockType = getNextBlockType()) => {
     const newBlockId = addBlock(type, {
       docId,
       afterBlockId: block.id,
@@ -154,11 +177,6 @@ const Block: React.FC<BlockProps> = ({
     }
   };
 
-  const moveBlockBy = (delta: -1 | 1) => {
-    moveBlock(index, index + delta, docId);
-    focusSibling(block.id);
-  };
-
   const handleKeyDown = (
     event: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
@@ -196,7 +214,7 @@ const Block: React.FC<BlockProps> = ({
 
     if (event.key === "Enter" && !event.shiftKey) {
       event.preventDefault();
-      createBlockBelow();
+      createBlockBelow(getNextBlockType());
       return;
     }
 
@@ -242,10 +260,11 @@ const Block: React.FC<BlockProps> = ({
       </button>
       <button
         type="button"
-        onClick={() => moveBlockBy(-1)}
+        {...attributes}
+        {...listeners}
         className="hidden rounded p-1 transition hover:bg-zinc-200 hover:text-zinc-600 disabled:opacity-30 dark:hover:bg-zinc-700 sm:block"
         disabled={index === 0}
-        aria-label="Move block up"
+        aria-label="Drag block"
       >
         <GripVertical size={14} />
       </button>
@@ -282,7 +301,11 @@ const Block: React.FC<BlockProps> = ({
     }
 
     if (block.type === "numbered-list") {
-      return <div className="mt-1.5 text-sm text-zinc-400">{index + 1}.</div>;
+      return (
+        <div className="mt-1.5 text-sm text-zinc-400">
+          {numberedListIndex ?? 1}.
+        </div>
+      );
     }
 
     if (isHeading) {
@@ -317,7 +340,16 @@ const Block: React.FC<BlockProps> = ({
   };
 
   return (
-    <div className="group relative flex rounded-xl px-2 py-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-800/70">
+    <div
+      ref={setNodeRef}
+      style={{
+        transform: CSS.Transform.toString(transform),
+        transition,
+      }}
+      className={`group relative flex rounded-xl px-2 py-1.5 text-slate-950 hover:bg-zinc-100 dark:text-slate-50 dark:hover:bg-zinc-800/70 ${
+        isDragging ? "z-40 opacity-70 shadow-xl" : ""
+      }`}
+    >
       {renderHandle()}
       <div className="w-8 flex-shrink-0">{isDatabase ? null : renderLeading()}</div>
 
@@ -337,7 +369,7 @@ const Block: React.FC<BlockProps> = ({
                 onChange={handleChange}
                 onKeyDown={handleKeyDown}
                 placeholder={placeholder}
-                className={`w-full resize-none bg-transparent py-1 outline-none ${renderInputClassName()} ${
+                className={`w-full resize-none bg-transparent py-1 text-slate-950 outline-none placeholder:text-slate-400 dark:text-slate-50 dark:placeholder:text-slate-500 ${renderInputClassName()} ${
                   isToggle && block.collapsed ? "opacity-60" : ""
                 }`}
               />
@@ -349,7 +381,7 @@ const Block: React.FC<BlockProps> = ({
                 onChange={handleChange}
                 onKeyDown={handleKeyDown}
                 placeholder={placeholder}
-                className={`w-full bg-transparent py-1 outline-none ${renderInputClassName()} ${
+                className={`w-full bg-transparent py-1 text-slate-950 outline-none placeholder:text-slate-400 dark:text-slate-50 dark:placeholder:text-slate-500 ${renderInputClassName()} ${
                   isToggle && block.collapsed ? "opacity-60" : ""
                 }`}
               />

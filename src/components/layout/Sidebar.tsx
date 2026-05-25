@@ -160,7 +160,7 @@ export const Sidebar = ({ lang, onLangToggle, onNavigate, className = "" }: Prop
           <select
             value={activeWorkspaceId ?? ""}
             onChange={(event) => setActiveWorkspaceId(event.target.value)}
-            className="min-w-0 rounded-lg border border-slate-200 bg-white px-2 py-2 text-sm outline-none dark:border-slate-700 dark:bg-slate-800"
+            className="min-w-0 rounded-lg border border-slate-200 bg-white px-2 py-2 text-sm text-slate-900 outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
           >
             {workspaces.map((workspace) => (
               <option key={workspace.id} value={workspace.id}>
